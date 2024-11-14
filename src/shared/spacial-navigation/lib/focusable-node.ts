@@ -11,7 +11,16 @@ export type NeighborPosition = 'top' | 'bottom' | 'left' | 'right';
 export class FocusableNode {
   private element: HTMLElement;
 
-  private neighbors: Neighbors;
+  private neighbors: Neighbors = {
+    top: null,
+    bottom: null,
+    left: null,
+    right: null,
+    topEl: null,
+    bottomEl: null,
+    leftEl: null,
+    rightEl: null,
+  };
 
   private debug = false;
 
@@ -32,18 +41,6 @@ export class FocusableNode {
 
   focus() {
     this.element.focus({ preventScroll: false });
-    setTimeout(() => {
-      // this.element.focus({ preventScroll: false });
-    }, 200);
-    // // Emit focus event without actually focusing
-    // const focusEvent = new FocusEvent('focus', {
-    //   bubbles: true,
-    //   cancelable: true,
-    // });
-    // this.element.dispatchEvent(focusEvent);
-    // setTimeout(() => {
-
-    // }, 0);
   }
 
   getOrientation() {
@@ -51,7 +48,11 @@ export class FocusableNode {
   }
 
   getParentFocusKey() {
-    return getNodeParentFocusKey(this.element);
+    const focusKey = getNodeParentFocusKey(this.element);
+    if (!focusKey) {
+      throw new Error(`Node ${this.getFocusKey()} has no parent focus key`);
+    }
+    return focusKey;
   }
 
   resetNeighbors() {
@@ -98,7 +99,7 @@ export class FocusableNode {
 }
 
 export interface Neighbors {
-  top: string | null;
+  top?: string | null;
   bottom: string | null;
   left: string | null;
   right: string | null;

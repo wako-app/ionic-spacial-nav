@@ -32,7 +32,7 @@ interface HTMLElementOverlay extends HTMLElement {
 export class SpacialNavigationService {
   timer: any;
 
-  spacialNavigation: SpacialNavigation;
+  spacialNavigation!: SpacialNavigation;
 
   private initialized = false;
 
@@ -66,9 +66,9 @@ export class SpacialNavigationService {
 
     this.spacialNavigation = new SpacialNavigation({ debug, visualDebug });
 
-    this.spacialNavigation.onFocused = ({ newItem, oldItem }) => {
-      this.onFocused.emit({ newItem, oldItem });
-    };
+    // this.spacialNavigation.onFocused = ({ newItem, oldItem }) => {
+    //   this.onFocused.emit({ newItem, oldItem });
+    // };
 
     this.spacialNavigation.log('initialize', 'initialized');
 
@@ -98,7 +98,7 @@ export class SpacialNavigationService {
     // Options for the observer (which mutations to observe)
     const config = { attributes: false, childList: true, subtree: true };
 
-    let _timer = null;
+    let _timer: number | null | undefined = null;
     // Callback function to execute when mutations are observed
     const callback = (mutationList: MutationRecord[]) => {
       let hasChanged = true;
@@ -217,7 +217,7 @@ export class SpacialNavigationService {
     const ctrls = [this.alertCtrl, this.actionSheetCtrl, this.modalCtrl];
 
     for (const ctrl of ctrls) {
-      const overlay: HTMLElementOverlay = await ctrl.getTop();
+      const overlay = await ctrl.getTop();
 
       if (overlay) {
         return overlay;
@@ -439,7 +439,9 @@ export class SpacialNavigationService {
       this.refreshFocusableNodes();
 
       // Restore focus
-      this.spacialNavigation.focusByFocusKey(focusKey);
+      if (focusKey) {
+        this.spacialNavigation.focusByFocusKey(focusKey);
+      }
 
       this.spacialNavigation.log(
         'onOverlayDidPresent',

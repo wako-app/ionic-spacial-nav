@@ -8,7 +8,7 @@ import {
   inject,
 } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { Lrud } from '@bam.tech/lrud';
+
 import {
   IonApp,
   IonSplitPane,

@@ -8,7 +8,6 @@ import {
 import { FocusableNode, Metrics, NeighborPosition } from './focusable-node';
 import {
   FocusableOrientation,
-  getFocusableNodesByStatus,
   getNodeFocusKey,
   isNodeFocusable,
   isNodeIsParent,
@@ -39,16 +38,16 @@ export class SpacialNavigation {
   visualDebugger: VisualDebugger | undefined;
 
   get currentFocusableFocusKey(): string | undefined {
-    return this.currentlyFocusedNode?.getFocusKey();
+    return this.currentlyFocusedNode?.getFocusKey() ?? undefined;
   }
 
-  onFocused: ({
-    newItem,
-    oldItem,
-  }: {
-    newItem: FocusableNode;
-    oldItem?: FocusableNode;
-  }) => void = () => {};
+  // onFocused: ({
+  //   newItem,
+  //   oldItem,
+  // }: {
+  //   newItem: FocusableNode;
+  //   oldItem?: FocusableNode;
+  // }) => void = () => {};
 
   constructor({
     debug = false,
@@ -214,11 +213,16 @@ export class SpacialNavigation {
     this.focusableNodes.push(fi);
     setFocusableStatus(node, 'active');
 
-    if (this.currentlyFocusedNode === null) {
+    if (!this.currentlyFocusedNode) {
       this.currentlyFocusedNode = fi;
     }
 
-    this.focusByFocusKey(this.currentlyFocusedNode.getFocusKey());
+    const focusKey = this.currentlyFocusedNode.getFocusKey();
+    if (focusKey) {
+      this.focusByFocusKey(focusKey);
+    }
+
+    throw new Error('Node has no focus key');
   }
 
   getFocusableNodes(): FocusableNode[] {
@@ -233,6 +237,9 @@ export class SpacialNavigation {
 
   focus(node: HTMLElement) {
     const focusKey = getNodeFocusKey(node);
+    if (!focusKey) {
+      throw new Error('Node has no focus key');
+    }
     this.focusByFocusKey(focusKey);
   }
 
@@ -278,7 +285,7 @@ export class SpacialNavigation {
 
       this.currentlyFocusedNode.focus();
 
-      this.onFocused({ newItem: this.currentlyFocusedNode, oldItem });
+      // this.onFocused({ newItem: this.currentlyFocusedNode, oldItem });
 
       this.setNeighbors(this.currentlyFocusedNode);
 
@@ -294,7 +301,11 @@ export class SpacialNavigation {
   focusFirstItem() {
     if (this.focusableNodes.length > 0) {
       const firstItem = this.focusableNodes[0];
-      this.focusByFocusKey(firstItem.getFocusKey());
+      const focusKey = firstItem.getFocusKey();
+      if (!focusKey) {
+        throw new Error(`First item has no focus key`);
+      }
+      this.focusByFocusKey(focusKey);
     }
   }
 
@@ -330,7 +341,11 @@ export class SpacialNavigation {
         `going to ${nextNodeToFocus}`,
         nextNodeToFocus?.getElement()
       );
-      this.focusByFocusKey(nextNodeToFocus.getFocusKey());
+      const focusKey = nextNodeToFocus.getFocusKey();
+      if (!focusKey) {
+        throw new Error(`Next node to focus has no focus key`);
+      }
+      this.focusByFocusKey(focusKey);
     }
   }
 
@@ -584,7 +599,7 @@ export class SpacialNavigation {
 
     this.log(
       'updateNeighbors',
-      fi.getFocusKey(),
+      fi.getFocusKey() ?? 'no focus key',
       'orientation',
       orientation,
       'updated',

@@ -23,12 +23,7 @@ export class VisualDebugger {
   private spacialNavigation: SpacialNavigation;
   private debugMode: boolean;
 
-  constructor(spacial: SpacialNavigation | null) {
-    if (!spacial) {
-      console.error(
-        `Unable to debug since the spacial controller is not defined.`
-      );
-    }
+  constructor(spacial: SpacialNavigation) {
     this.spacialNavigation = spacial;
     this.debugMode = true;
   }

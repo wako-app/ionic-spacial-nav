@@ -19,9 +19,9 @@ import { FocusableOrientation, ROOT_FOCUS_KEY } from './lib/spacial-node';
 export class SpacialFocusableDirective implements OnInit {
   //* If true, the element will be focused when the page is entered
   @Input() snParentFocusKey: string = ROOT_FOCUS_KEY;
-  @Input() snFocusKey: string;
+  @Input() snFocusKey?: string;
   @Input() snIsParent?: any = undefined;
-  @Input() snOrientation: FocusableOrientation;
+  @Input() snOrientation?: FocusableOrientation;
 
   @Input() focusMeOnPageEnter = false;
   @Output() snFocus = new EventEmitter<ElementRef>();
