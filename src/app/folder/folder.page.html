@@ -16,6 +16,54 @@
 
   <div id="container">
     <strong class="capitalize">{{ folder }}</strong>
-    <p>Explore <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+
+    <div style="display: flex; gap: 10px; justify-content: space-between">
+      <ion-button>BTN -1</ion-button>
+      <ion-button
+        (click)="presentActionSheet()"
+        wkSnFocusable
+        snFocusKey="BTN_0"
+      >
+        BTN 0 (action sheet)
+      </ion-button>
+    </div>
+
+    <ion-button>BTN 1</ion-button>
+    <ion-button (click)="presentActionSheet()">BTN 2 (action sheet)</ion-button>
+
+    <div wkSnFocusable snFocusKey="BTN_GROUP_1" snIsParent>
+      <ion-button
+        wkSnFocusable
+        snFocusKey="BTN_3"
+        snParentFocusKey="BTN_GROUP_1"
+        >BTN 3</ion-button
+      >
+      <ion-button
+        wkSnFocusable
+        snFocusKey="BTN_4"
+        snParentFocusKey="BTN_GROUP_1"
+        (click)="presentActionSheet()"
+        >BTN 4 (action sheet)</ion-button
+      >
+    </div>
+
+    <ion-button>BTN 5</ion-button>
+
+    <!-- <ion-button>
+      <ion-icon slot="icon-only" name="heart"></ion-icon>
+    </ion-button>
+    <ion-button shape="round">
+      <ion-icon slot="icon-only" name="heart"></ion-icon>
+    </ion-button> -->
+
+    <p>
+      Explore
+      <a
+        target="_blank"
+        rel="noopener noreferrer"
+        href="https://ionicframework.com/docs/components"
+        >UI Components</a
+      >
+    </p>
   </div>
 </ion-content>

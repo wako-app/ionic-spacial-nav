@@ -34,4 +34,29 @@
 
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import '@ionic/angular/css/palettes/dark.system.css';
+@import "@ionic/angular/css/palettes/dark.always.css";
+
+[sn-focusable] {
+  border: 3px solid transparent;
+}
+
+.sn-debug {
+  [sn-focusable="pending"] {
+    border: 3px solid rgb(255, 115, 0);
+  }
+  [sn-focusable="active"] {
+    border: 3px solid blue;
+  }
+  [sn-focusable="disabled"] {
+    border: 3px solid red;
+  }
+  [sn-is-parent] {
+    border: 3px solid #f035d1;
+  }
+}
+
+[sn-focused]:focus {
+  border-radius: 3px;
+  border-color: white !important;
+  background-color: rgba($color: #fff, $alpha: 0.2) !important;
+}
