@@ -62,9 +62,9 @@ export class SpacialNavigation {
       document.body.classList.add('sn-debug');
       this.visualDebugger = new VisualDebugger(this);
 
-      setTimeout(() => {
-        // this.focusByFocusKey('BTN_0');
-      }, 1000);
+      // setTimeout(() => {
+      //   this.focusByFocusKey('BTN_0');
+      // }, 1000);
     }
 
     this.log('initialize', `debug: ${debug} - visualDebug: ${visualDebug}`);
@@ -218,11 +218,11 @@ export class SpacialNavigation {
     }
 
     const focusKey = this.currentlyFocusedNode.getFocusKey();
-    if (focusKey) {
-      this.focusByFocusKey(focusKey);
+    if (!focusKey) {
+      throw new Error('Node has no focus key');
     }
 
-    throw new Error('Node has no focus key');
+    this.focusByFocusKey(focusKey);
   }
 
   getFocusableNodes(): FocusableNode[] {
@@ -295,7 +295,7 @@ export class SpacialNavigation {
       });
 
       this.visualDebugger?.updateDisplay();
-    }, 1);
+    }, 0);
   }
 
   focusFirstItem() {
@@ -378,6 +378,8 @@ export class SpacialNavigation {
       });
     }
 
+    console.log(new Date(), 'LEFT START', neighborNodes);
+
     let minTopElementDist: number | undefined;
     let minBottomElementDist: number | undefined;
     let minLeftElementDist: number | undefined;
@@ -437,17 +439,7 @@ export class SpacialNavigation {
         minBottomElementDist = distanceBottom;
         fromNode.setNeighborNode(newItem, 'bottom');
       }
-      if (canMoveRight) {
-        console.log(
-          'RIGHT PREFER SAME ROW',
-          newItem.getElement(),
-          getRightDistance({
-            fromMetrics: metrics,
-            toMetrics: newMetrics,
-            preferCloserY: true, // Prefer same row for horizontal movement
-          })
-        );
-      }
+
       if (
         canMoveLeft &&
         distanceLeft !== null &&
@@ -465,6 +457,18 @@ export class SpacialNavigation {
       ) {
         minRightElementDist = distanceRight;
         fromNode.setNeighborNode(newItem, 'right');
+      }
+
+      if (canMoveLeft) {
+        console.log(
+          'LEFT PREFER SAME ROW',
+          newItem.getElement(),
+          getLeftDistance({
+            fromMetrics: metrics,
+            toMetrics: newMetrics,
+            preferCloserY: true, // Prefer same row for horizontal movement
+          })
+        );
       }
     }
 
@@ -504,17 +508,6 @@ export class SpacialNavigation {
               })
             : null;
 
-          if (canMoveRight) {
-            console.log(
-              'RIGHT V2',
-              newItem.getElement(),
-              getRightDistance({
-                fromMetrics: metrics,
-                toMetrics: newMetrics,
-                preferCloserY: false,
-              })
-            );
-          }
           if (
             canMoveRight &&
             distanceRight !== null &&
@@ -523,6 +516,20 @@ export class SpacialNavigation {
           ) {
             minRightElementDist = distanceRight;
             fromNode.setNeighborNode(newItem, 'right');
+          }
+        }
+
+        if (checkLeft || checkRight) {
+          if (canMoveLeft) {
+            console.log(
+              'LEFT V2',
+              newItem.getElement(),
+              getLeftDistance({
+                fromMetrics: metrics,
+                toMetrics: newMetrics,
+                preferCloserY: false,
+              })
+            );
           }
         }
       }
@@ -592,7 +599,7 @@ export class SpacialNavigation {
             `Previous neighbor: ${neighbor.getFocusKey()}`,
             `New neighbor: ${lastFocusedInParent.getFocusKey()}`
           );
-          //fi.setNeighborNode(lastFocusedInParent, position);
+          fi.setNeighborNode(lastFocusedInParent, position);
         }
       }
     }
