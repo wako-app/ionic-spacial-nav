@@ -5,6 +5,18 @@ export const FOCUSABLE_ITEM_ATTRIBUTE_FOCUSED = 'sn-focused';
 export const FOCUSABLE_ITEM_ATTRIBUTE_PARENT_FOCUS_KEY = 'sn-parent-focuskey';
 export const FOCUSABLE_ITEM_ATTRIBUTE_IS_PARENT = 'sn-is-parent';
 export const FOCUSABLE_ITEM_ATTRIBUTE_ORIENTATION = 'sn-orientation';
+export const FOCUSABLE_ITEM_ATTRIBUTE_CONSTRAINT_TO_PARENT =
+  'sn-constraint-to-parent';
+
+const allSnAttributes = [
+  FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_KEY,
+  FOCUSABLE_ITEM_ATTRIBUTE_FOCUSABLE,
+  FOCUSABLE_ITEM_ATTRIBUTE_FOCUSED,
+  FOCUSABLE_ITEM_ATTRIBUTE_PARENT_FOCUS_KEY,
+  FOCUSABLE_ITEM_ATTRIBUTE_IS_PARENT,
+  FOCUSABLE_ITEM_ATTRIBUTE_ORIENTATION,
+  FOCUSABLE_ITEM_ATTRIBUTE_CONSTRAINT_TO_PARENT,
+];
 
 export type FocusableStatus = 'pending' | 'active' | 'disabled';
 export type FocusableOrientation = 'horizontal' | 'vertical';
@@ -47,6 +59,16 @@ export function setNodeOrientation(
   node.setAttribute(FOCUSABLE_ITEM_ATTRIBUTE_ORIENTATION, orientation);
 }
 
+export function setNodeConstraintToParent(node: HTMLElement) {
+  node.setAttribute(FOCUSABLE_ITEM_ATTRIBUTE_CONSTRAINT_TO_PARENT, 'true');
+}
+
+export function isNodeConstraintToParent(node: HTMLElement) {
+  return (
+    node.getAttribute(FOCUSABLE_ITEM_ATTRIBUTE_CONSTRAINT_TO_PARENT) === 'true'
+  );
+}
+
 export function setNodeParentFocusKey(
   node: HTMLElement,
   parentFocusKey: string
@@ -74,7 +96,7 @@ export function getNodeFocusKey(node: HTMLElement) {
 }
 
 export function getNodeByFocusKey(focusKey: string) {
-  return document.querySelector(
+  return document.querySelector<HTMLElement>(
     `[${FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_KEY}="${focusKey}"]`
   );
 }
@@ -101,5 +123,11 @@ export function isNodeFocusable(node: HTMLElement) {
 export function setAllNodesDisabled(parent?: HTMLElement) {
   getFocusableNodesByStatus({ status: 'active', parent }).forEach((node) => {
     setFocusableStatus(node, 'disabled');
+  });
+}
+
+export function removeAllSnAttributes(node: HTMLElement) {
+  allSnAttributes.forEach((attribute) => {
+    node.removeAttribute(attribute);
   });
 }

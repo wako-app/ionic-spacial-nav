@@ -22,6 +22,8 @@ import { SpacialNavigationService } from './spacial-navigation.service';
   `,
 })
 export default class SpacialScrollViewComponent {
+  private spacialNavigationService = inject(SpacialNavigationService);
+
   @Input() title?: string;
   @Input() horizontal = true;
   @Input() class = '';
@@ -31,7 +33,10 @@ export default class SpacialScrollViewComponent {
 
   private latestFocusedElement: HTMLElement | null = null;
 
-  constructor(private spacialNavigationService: SpacialNavigationService) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     this.spacialNavigationService.onFocused.subscribe(({ newItem, oldItem }) => {
       if (newItem.getElement() === this.latestFocusedElement) {
         this.elementRef.nativeElement.scrollIntoView({

@@ -1,4 +1,4 @@
-import { EventEmitter, Injectable } from '@angular/core';
+import { EventEmitter, Injectable, inject } from '@angular/core';
 
 import { Location } from '@angular/common';
 import { NavigationEnd, Router } from '@angular/router';
@@ -13,12 +13,11 @@ import { FocusableNode } from './lib/focusable-node';
 import { SpacialNavigation } from './lib/spacial-navigation';
 import {
   FOCUSABLE_ITEM_ATTRIBUTE_FOCUSABLE,
+  FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_KEY,
   FOCUSABLE_ITEM_ATTRIBUTE_IS_PARENT,
   ROOT_FOCUS_KEY,
-  getFocusableNodesByStatus,
   getNodeFocusKey,
-  setAllNodesDisabled,
-  setFocusableStatus,
+  getNodeParentFocusKey,
 } from './lib/spacial-node';
 
 interface HTMLElementOverlay extends HTMLElement {
@@ -26,10 +25,17 @@ interface HTMLElementOverlay extends HTMLElement {
   dismiss: () => Promise<any>;
 }
 
+let parentFkCount = 0;
 @Injectable({
   providedIn: 'root',
 })
 export class SpacialNavigationService {
+  private modalCtrl = inject(ModalController);
+  private alertCtrl = inject(AlertController);
+  private actionSheetCtrl = inject(ActionSheetController);
+  private router = inject(Router);
+  private location = inject(Location);
+
   timer: any;
 
   spacialNavigation!: SpacialNavigation;
@@ -38,18 +44,12 @@ export class SpacialNavigationService {
 
   private overlayVisible: HTMLElementOverlay | null = null;
 
+  private focusKeyToRestore: string | null = null;
+
   onFocused = new EventEmitter<{
     newItem: FocusableNode;
     oldItem?: FocusableNode;
   }>();
-
-  constructor(
-    private modalCtrl: ModalController,
-    private alertCtrl: AlertController,
-    private actionSheetCtrl: ActionSheetController,
-    private router: Router,
-    private location: Location
-  ) {}
 
   initialize({
     debug = false,
@@ -70,8 +70,6 @@ export class SpacialNavigationService {
     //   this.onFocused.emit({ newItem, oldItem });
     // };
 
-    this.spacialNavigation.log('initialize', 'initialized');
-
     this.hackIonicModals();
 
     this.overrideBrowserService();
@@ -84,11 +82,10 @@ export class SpacialNavigationService {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe((event) => {
-        setTimeout(() => {
-          this.spacialNavigation.log('route change', 'navigation ended');
-          this.refreshFocusableNodes();
-        }, 500);
+        this.routeChange();
       });
+
+    this.spacialNavigation.log('initialize', 'Service initialized');
   }
 
   private listenForBodyChange() {
@@ -98,7 +95,7 @@ export class SpacialNavigationService {
     // Options for the observer (which mutations to observe)
     const config = { attributes: false, childList: true, subtree: true };
 
-    let _timer: number | null | undefined = null;
+    let mutationTimer: number | null | undefined = null;
     // Callback function to execute when mutations are observed
     const callback = (mutationList: MutationRecord[]) => {
       let hasChanged = true;
@@ -114,11 +111,11 @@ export class SpacialNavigationService {
       }
 
       if (hasChanged) {
-        if (_timer) {
-          clearTimeout(_timer);
+        if (mutationTimer) {
+          clearTimeout(mutationTimer);
         }
 
-        _timer = setTimeout(() => {
+        mutationTimer = setTimeout(() => {
           this.spacialNavigation.log(
             'listenForBodyChange',
             'change detected in body'
@@ -138,7 +135,7 @@ export class SpacialNavigationService {
     document.addEventListener('keyup', async (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         // toggle debugging
-        this.spacialNavigation.visualDebugger?.toggleDebugMode();
+        this.spacialNavigation?.toggleDebug();
       }
 
       if (e.key === 'Backspace') {
@@ -227,25 +224,10 @@ export class SpacialNavigationService {
     return null;
   }
 
-  debounceUpdate() {
-    if (!this.initialized) {
-      return;
-    }
-
-    if (this.timer) {
-      clearTimeout(this.timer);
-    }
-    this.timer = setTimeout(() => {
-      //  this.update();
-    }, 200);
-  }
-
-  update() {
-    this.timer = null;
-    // this.spacialNavigation.update();
-  }
-
-  private registerNewFocusableNodes(rootElement: HTMLElement = document.body) {
+  private registerNewFocusableNodes({
+    rootElement = document.body,
+    isOverlayVisible = false,
+  }: { rootElement?: HTMLElement; isOverlayVisible?: boolean } = {}) {
     const focusableSelectors = [
       `.ion-focusable:not([${FOCUSABLE_ITEM_ATTRIBUTE_FOCUSABLE}])`,
       `input[type="text"]:not([${FOCUSABLE_ITEM_ATTRIBUTE_FOCUSABLE}])`,
@@ -270,9 +252,91 @@ export class SpacialNavigationService {
         nodesToRegister.push(node);
       });
 
-    const groupNode = true;
+    let groupNode = false;
 
-    if (groupNode) {
+    let parentFocusKey: string | null = null;
+
+    if (isOverlayVisible) {
+      // Overlay constraint
+      if (!this.focusKeyToRestore) {
+        this.focusKeyToRestore =
+          this.spacialNavigation.currentlyFocusKey ?? null;
+      }
+
+      const fk = getNodeFocusKey(rootElement);
+      if (fk) {
+        parentFocusKey = fk;
+      } else {
+        groupNode = false;
+
+        parentFocusKey = this.spacialNavigation.registerParentNode({
+          node: rootElement,
+          focusKey: `sn-parent-${rootElement.tagName}-${parentFkCount++}`,
+          saveLastFocusedChild: true,
+          constraintToParent: true,
+        });
+      }
+
+      // UnRegistered nodes
+      const unregisteredNodes = rootElement.querySelectorAll(
+        `[${FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_KEY}]`
+      );
+
+      unregisteredNodes.forEach((node) => {
+        if (!(node instanceof HTMLElement)) {
+          return;
+        }
+        let fk = getNodeFocusKey(node);
+        let pk = getNodeParentFocusKey(node);
+
+        if (fk && pk && pk !== parentFocusKey) {
+          this.spacialNavigation.unregisterNode({
+            focusKey: fk,
+          });
+
+          nodesToRegister.push(node);
+        }
+      });
+    }
+
+    let focusNode = isOverlayVisible;
+
+    if (!groupNode) {
+      for (const node of nodesToRegister) {
+        // Get closest parent focus key from attribute
+        let parentNode = node.closest(
+          `[${FOCUSABLE_ITEM_ATTRIBUTE_IS_PARENT}]`
+        );
+
+        if (!parentNode) {
+          // Get the closet .ion-page
+          parentNode = node.closest('.ion-page');
+        }
+
+        if (
+          !parentFocusKey &&
+          parentNode &&
+          parentNode instanceof HTMLElement
+        ) {
+          parentFocusKey = getNodeFocusKey(parentNode);
+          if (!parentFocusKey) {
+            this.spacialNavigation.registerParentNode({
+              node: parentNode,
+              focusKey: ROOT_FOCUS_KEY,
+              saveLastFocusedChild: true,
+            });
+          }
+        }
+
+        this.spacialNavigation.registerNode({
+          node,
+          origin: 'makeFocusableNodes',
+          parentFocusKey: parentFocusKey ?? ROOT_FOCUS_KEY,
+          focusNode,
+        });
+        focusNode = false;
+      }
+    } else {
       // Group nodes that are in the same row by comparing their vertical positions
       const nodesByRow = new Map<number, HTMLElement[]>();
       const rowThreshold = 10; // Pixels threshold to consider elements in same row
@@ -335,34 +399,6 @@ export class SpacialNavigationService {
           });
         }
       }
-    } else {
-      for (const node of nodesToRegister) {
-        let parentFocusKey = null;
-        // Get closest parent focus key from attribute
-        let parentNode = node.closest(
-          `[${FOCUSABLE_ITEM_ATTRIBUTE_IS_PARENT}]`
-        );
-        if (!parentNode) {
-          // Get the closet .ion-page
-          parentNode = node.closest('.ion-page');
-        }
-
-        if (parentNode && parentNode instanceof HTMLElement) {
-          parentFocusKey = getNodeFocusKey(parentNode);
-          if (!parentFocusKey) {
-            this.spacialNavigation.registerParentNode({
-              node: parentNode,
-              focusKey: ROOT_FOCUS_KEY,
-            });
-          }
-        }
-
-        this.spacialNavigation.registerNode({
-          node,
-          origin: 'makeFocusableNodes',
-          parentFocusKey: parentFocusKey ?? ROOT_FOCUS_KEY,
-        });
-      }
     }
   }
 
@@ -371,63 +407,16 @@ export class SpacialNavigationService {
       return;
     }
 
-    // TODO REFACTOR
-    if (this.overlayVisible) {
-      // Make all elements not focusable anymore
-      this.handleFocusableNodeOnOverlayDidPresent(this.overlayVisible);
-    } else {
-      this.registerNewFocusableNodes();
-
-      // // First remove all disabled and active focusable items on visible pages
-      // let firstElementOnPage = null;
-      // document
-      //   .querySelectorAll<HTMLElement>(`.ion-page:not(.ion-page-hidden)`)
-      //   .forEach((node) => {
-      //     [
-      //       ...getFocusableNodesByStatus({
-      //         status: 'disabled',
-      //         parent: node,
-      //       }),
-      //       ...getFocusableNodesByStatus({
-      //         status: 'active',
-      //         parent: node,
-      //       }),
-      //     ].forEach((node) => {
-      //       if (!firstElementOnPage) {
-      //         firstElementOnPage = node;
-      //       }
-      //       setFocusableStatus(node, 'pending');
-      //     });
-      //   });
-
-      // // Last disable all focusable items on hidden pages
-      // document
-      //   .querySelectorAll<HTMLElement>(`.ion-page.ion-page-hidden`)
-      //   .forEach((node) => {
-      //     [
-      //       ...getFocusableNodesByStatus({
-      //         status: 'active',
-      //         parent: node,
-      //       }),
-      //       ...getFocusableNodesByStatus({
-      //         status: 'pending',
-      //         parent: node,
-      //       }),
-      //     ].forEach((node) => {
-      //       setFocusableStatus(node, 'disabled');
-      //     });
-      //   });
-    }
-
-    this.update();
+    this.registerNewFocusableNodes({
+      rootElement: this.overlayVisible ?? document.body,
+      isOverlayVisible: !!this.overlayVisible,
+    });
   }
 
   private onOverlayDidPresent(overlay: HTMLElementOverlay) {
-    const focusKey = this.spacialNavigation.currentFocusableFocusKey;
-
     this.spacialNavigation.log(
       'onOverlayDidPresent',
-      `overlay presented due to click on ${focusKey}`,
+      `overlay presented due to click on ${this.focusKeyToRestore}`,
       overlay
     );
 
@@ -439,39 +428,35 @@ export class SpacialNavigationService {
       this.refreshFocusableNodes();
 
       // Restore focus
-      if (focusKey) {
-        this.spacialNavigation.focusByFocusKey(focusKey);
+      if (this.focusKeyToRestore) {
+        this.spacialNavigation.log(
+          'onOverlayDidPresent',
+          'restore focus',
+          this.focusKeyToRestore
+        );
+        this.spacialNavigation.focusByFocusKey(this.focusKeyToRestore);
+        this.focusKeyToRestore = null;
       }
 
       this.spacialNavigation.log(
         'onOverlayDidPresent',
         'restore focus',
-        focusKey
+        this.focusKeyToRestore
       );
     });
 
-    // Hide all focusable items
-    this.handleFocusableNodeOnOverlayDidPresent(overlay);
-
-    this.update();
-  }
-
-  private handleFocusableNodeOnOverlayDidPresent(overlay: HTMLElementOverlay) {
-    // Make all focusable nodes disabled
-    setAllNodesDisabled();
-
-    this.registerNewFocusableNodes(overlay);
-
-    // Make all disabled focusable nodes pending
-    getFocusableNodesByStatus({
-      status: 'disabled',
-      parent: overlay,
-    }).forEach((node) => {
-      setFocusableStatus(node, 'pending');
+    this.registerNewFocusableNodes({
+      rootElement: overlay,
+      isOverlayVisible: true,
     });
   }
 
-  onPageDidEnter() {
-    this.refreshFocusableNodes();
+  routeChange() {
+    setTimeout(() => {
+      this.spacialNavigation.log('routeChange', 'unregister deleted nodes');
+      this.spacialNavigation.unregisterDeletedNodes();
+      this.spacialNavigation.resetCurrentFocusedNodeNeighbors();
+      this.refreshFocusableNodes();
+    }, 100);
   }
 }

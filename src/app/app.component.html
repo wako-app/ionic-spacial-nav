@@ -6,16 +6,15 @@
       wkSnFocusable
       snFocusKey="menu"
       snIsParent
+      snOrientation="vertical"
     >
       <ion-content>
         <ion-list id="inbox-list">
           <ion-list-header>Inbox</ion-list-header>
           <ion-note>hi&#64;ionicframework.com</ion-note>
 
-          <ion-menu-toggle
-            auto-hide="false"
-            *ngFor="let p of appPages; let i = index"
-          >
+          @for (p of appPages; track p; let i = $index) {
+          <ion-menu-toggle auto-hide="false">
             <ion-item
               button
               routerDirection="root"
@@ -24,8 +23,8 @@
               detail="false"
               routerLinkActive="selected"
               wkSnFocusable
+              [snFocusKey]="p.title"
               snParentFocusKey="menu"
-              snOrientation="vertical"
             >
               <ion-icon
                 aria-hidden="true"
@@ -36,12 +35,14 @@
               <ion-label>{{ p.title }}</ion-label>
             </ion-item>
           </ion-menu-toggle>
+          }
         </ion-list>
 
         <ion-list id="labels-list">
           <ion-list-header>Labels</ion-list-header>
 
-          <ion-item *ngFor="let label of labels" lines="none">
+          @for (label of labels; track label) {
+          <ion-item lines="none">
             <ion-icon
               aria-hidden="true"
               slot="start"
@@ -50,6 +51,7 @@
             ></ion-icon>
             <ion-label>{{ label }}</ion-label>
           </ion-item>
+          }
         </ion-list>
       </ion-content>
     </ion-menu>

@@ -1,12 +1,4 @@
-import { CommonModule } from '@angular/common';
-import { QueryList, ViewChildren } from '@angular/core';
-import {
-  AfterViewInit,
-  Component,
-  ElementRef,
-  OnInit,
-  inject,
-} from '@angular/core';
+import { AfterViewInit, Component, inject, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import {
@@ -26,6 +18,7 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
+  homeOutline,
   mailOutline,
   mailSharp,
   paperPlaneOutline,
@@ -53,7 +46,6 @@ import { SpacialNavigationService } from 'src/shared/spacial-navigation/spacial-
   imports: [
     RouterLink,
     RouterLinkActive,
-    CommonModule,
     IonApp,
     IonSplitPane,
     IonMenu,
@@ -72,21 +64,21 @@ import { SpacialNavigationService } from 'src/shared/spacial-navigation/spacial-
 })
 export class AppComponent implements AfterViewInit {
   public appPages = [
-    { title: 'Inbox', url: '/folder/inbox', icon: 'mail' },
+    { title: 'Home', url: '/', icon: 'home' },
+    { title: 'Buttons', url: '/buttons', icon: 'mail' },
     { title: 'Outbox', url: '/folder/outbox', icon: 'paper-plane' },
-    // { title: 'Favorites', url: '/folder/favorites', icon: 'heart' },
-    // { title: 'Archived', url: '/folder/archived', icon: 'archive' },
-    // { title: 'Trash', url: '/folder/trash', icon: 'trash' },
-    // { title: 'Spam', url: '/folder/spam', icon: 'warning' },
+    { title: 'Favorites', url: '/folder/favorites', icon: 'heart' },
+    { title: 'Archived', url: '/folder/archived', icon: 'archive' },
+    { title: 'Trash', url: '/folder/trash', icon: 'trash' },
+    { title: 'Spam', url: '/folder/spam', icon: 'warning' },
   ];
   public labels = ['Family', 'Friends', 'Notes', 'Work', 'Travel', 'Reminders'];
 
   private spacialNavigationService = inject(SpacialNavigationService);
 
-  @ViewChildren('menuItem') menuItems!: QueryList<ElementRef>;
-
   constructor() {
     addIcons({
+      homeOutline,
       mailOutline,
       mailSharp,
       paperPlaneOutline,
@@ -107,15 +99,11 @@ export class AppComponent implements AfterViewInit {
       debug: true,
       visualDebug: true,
     });
-
-    // SpatialNavigation.init({
-    //   debug: true,
-    //   visualDebug: false,
-    //   distanceCalculationMethod: 'center',
-    // });
   }
 
-  ngAfterViewInit(): void {
-    // this.focusSelf();
+  ngAfterViewInit() {
+    setTimeout(() => {
+      //this.spacialNavigationService.spacialNavigation.resetCurrentFocusedNodeNeighbors();
+    }, 1000);
   }
 }

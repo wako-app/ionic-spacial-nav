@@ -22,11 +22,8 @@ export class FocusableNode {
     rightEl: null,
   };
 
-  private debug = false;
-
-  constructor(ele: HTMLElement, debug = false) {
+  constructor(ele: HTMLElement) {
     this.element = ele;
-    this.debug = debug;
 
     this.resetNeighbors();
   }
@@ -36,15 +33,28 @@ export class FocusableNode {
   }
 
   getFocusKey() {
-    return getNodeFocusKey(this.element);
+    const focusKey = getNodeFocusKey(this.element);
+    if (!focusKey) {
+      throw new Error(`Node ${this.element.outerHTML} has no focus key`);
+    }
+    return focusKey;
   }
 
   focus() {
-    this.element.focus({ preventScroll: false });
+    this.element.focus();
+  }
+
+  blur() {
+    this.element.blur();
   }
 
   getOrientation() {
-    return getNodeOrientation(this.element);
+    // Orientation is set on the parent node, so we need to get it from the parent node
+    const parentNode = this.getParentNode();
+    if (!parentNode) {
+      throw new Error(`Node ${this.getFocusKey()} has no parent node`);
+    }
+    return getNodeOrientation(parentNode);
   }
 
   getParentFocusKey() {
@@ -53,6 +63,14 @@ export class FocusableNode {
       throw new Error(`Node ${this.getFocusKey()} has no parent focus key`);
     }
     return focusKey;
+  }
+
+  getParentNode() {
+    const parentNode = getNodeByFocusKey(this.getParentFocusKey());
+    if (!parentNode) {
+      throw new Error(`Node ${this.getFocusKey()} has no parent node`);
+    }
+    return parentNode;
   }
 
   resetNeighbors() {
@@ -94,7 +112,7 @@ export class FocusableNode {
   }
 
   onEnter(event: KeyboardEvent) {
-    console.log('onEnter', event);
+    this.element.click();
   }
 }
 

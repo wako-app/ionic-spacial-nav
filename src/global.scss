@@ -57,9 +57,12 @@
   [sn-is-parent] {
     border: 3px solid #f035d1;
   }
+  [sn-constraint-to-parent] {
+    border: 3px solid #fc33339f;
+  }
 }
 
-[sn-focused]:focus {
+[sn-focused="true"] {
   border-radius: 3px;
   border-color: white !important;
   background-color: rgba($color: #fff, $alpha: 0.2) !important;

@@ -1,9 +1,11 @@
 import {
+  AfterViewInit,
   Directive,
   ElementRef,
   EventEmitter,
   HostListener,
   Input,
+  OnDestroy,
   OnInit,
   Output,
   inject,
@@ -11,12 +13,13 @@ import {
 import { SpacialNavigationService } from './spacial-navigation.service';
 
 import { FocusableOrientation, ROOT_FOCUS_KEY } from './lib/spacial-node';
+import { FocusableNode } from './lib/focusable-node';
 
 @Directive({
   selector: '[wkSnFocusable]',
   standalone: true,
 })
-export class SpacialFocusableDirective implements OnInit {
+export class SpacialFocusableDirective implements AfterViewInit, OnDestroy {
   //* If true, the element will be focused when the page is entered
   @Input() snParentFocusKey: string = ROOT_FOCUS_KEY;
   @Input() snFocusKey?: string;
@@ -28,6 +31,7 @@ export class SpacialFocusableDirective implements OnInit {
 
   private spacialNavigationService = inject(SpacialNavigationService);
   private element = inject(ElementRef);
+  private focusableNode: FocusableNode | null = null;
 
   @HostListener('keyup.enter')
   keyPressEnter() {
@@ -39,7 +43,7 @@ export class SpacialFocusableDirective implements OnInit {
     this.snFocus.emit(this.element);
   }
 
-  ngOnInit() {
+  ngAfterViewInit() {
     if (this.snIsParent !== undefined) {
       this.spacialNavigationService.spacialNavigation.registerParentNode({
         node: this.element.nativeElement,
@@ -48,12 +52,16 @@ export class SpacialFocusableDirective implements OnInit {
         saveLastFocusedChild: true,
       });
     } else {
-      this.spacialNavigationService.spacialNavigation.registerNode({
-        node: this.element.nativeElement,
-        origin: 'directive',
-        focusKey: this.snFocusKey,
-        parentFocusKey: this.snParentFocusKey,
-      });
+      // Parent are added to the DOM after children
+      setTimeout(() => {
+        this.focusableNode =
+          this.spacialNavigationService.spacialNavigation.registerNode({
+            node: this.element.nativeElement,
+            origin: 'wkSnFocusable',
+            focusKey: this.snFocusKey,
+            parentFocusKey: this.snParentFocusKey,
+          });
+      }, 100);
     }
 
     // this.spacialNavigationService.debounceUpdate();
@@ -66,5 +74,13 @@ export class SpacialFocusableDirective implements OnInit {
     //     );
     //   }, 300);
     // }
+  }
+
+  ngOnDestroy() {
+    if (this.focusableNode) {
+      this.spacialNavigationService.spacialNavigation.unregisterNode({
+        focusKey: this.focusableNode.getFocusKey(),
+      });
+    }
   }
 }
