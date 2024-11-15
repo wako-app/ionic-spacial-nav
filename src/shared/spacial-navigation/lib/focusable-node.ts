@@ -26,7 +26,8 @@ export class FocusableNode {
   private focusListeners: (() => void)[] = [];
   private blurListeners: (() => void)[] = [];
   private clickListeners: (() => void)[] = [];
-  constructor(ele: HTMLElement) {
+
+  constructor(ele: HTMLElement, private preventScrollOnFocus = false) {
     this.element = ele;
 
     this.resetNeighbors();
@@ -39,7 +40,7 @@ export class FocusableNode {
   getFocusKey() {
     const focusKey = getNodeFocusKey(this.element);
     if (!focusKey) {
-      throw new Error(`Node ${this.element.outerHTML} has no focus key`);
+      return undefined;
     }
     return focusKey;
   }
@@ -48,25 +49,21 @@ export class FocusableNode {
     // Orientation is set on the parent node, so we need to get it from the parent node
     const parentNode = this.getParentNode();
     if (!parentNode) {
-      throw new Error(`Node ${this.getFocusKey()} has no parent node`);
+      return undefined;
     }
     return getNodeOrientation(parentNode);
   }
 
   getParentFocusKey() {
-    const focusKey = getNodeParentFocusKey(this.element);
-    if (!focusKey) {
-      throw new Error(`Node ${this.getFocusKey()} has no parent focus key`);
-    }
-    return focusKey;
+    return getNodeParentFocusKey(this.element) ?? undefined;
   }
 
   getParentNode() {
-    const parentNode = getNodeByFocusKey(this.getParentFocusKey());
-    if (!parentNode) {
-      throw new Error(`Node ${this.getFocusKey()} has no parent node`);
+    const parentFocusKey = this.getParentFocusKey();
+    if (!parentFocusKey) {
+      return undefined;
     }
-    return parentNode;
+    return getNodeByFocusKey(parentFocusKey);
   }
 
   resetNeighbors() {
@@ -84,7 +81,7 @@ export class FocusableNode {
 
   setNeighborNode(neighborNode: FocusableNode, position: NeighborPosition) {
     this.neighbors[`${position}El`] = neighborNode;
-    this.neighbors[position] = neighborNode.getFocusKey();
+    this.neighbors[position] = neighborNode.getFocusKey() ?? null;
   }
 
   getNeighborNode(position: NeighborPosition) {
@@ -96,7 +93,7 @@ export class FocusableNode {
   }
 
   focus() {
-    this.element.focus({ preventScroll: false });
+    this.element.focus({ preventScroll: this.preventScrollOnFocus === true });
   }
 
   blur() {

@@ -3,15 +3,19 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'home',
+    redirectTo: 'movies',
     pathMatch: 'full',
   },
   {
-    path: 'home',
-    loadComponent: () => import('./home.page'),
+    path: 'movies',
+    loadComponent: () => import('./movies.page'),
   },
   {
     path: 'buttons',
     loadComponent: () => import('./buttons.page'),
+  },
+  {
+    path: 'overlays',
+    loadComponent: () => import('./overlays.page'),
   },
 ];

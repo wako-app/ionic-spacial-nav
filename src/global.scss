@@ -40,34 +40,37 @@
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import "@ionic/angular/css/palettes/dark.always.css";
 
-[sn-focusable] {
-  border: 3px solid transparent;
+[sn-focusable],
+[sn-is-parent] {
+  border-width: 3px;
+  border-style: solid;
+  border-color: transparent;
 }
 [sn-focusable]:focus {
-  border: none;
-  outline: none;
+  border-color: rgb(255, 115, 0);
 }
 
 .sn-debug {
   [sn-focusable="pending"] {
-    border: 3px solid rgb(255, 115, 0);
+    border-color: rgb(255, 115, 0);
   }
   [sn-focusable="active"] {
-    border: 3px solid rgb(113, 113, 220);
+    border-color: rgb(113, 113, 220);
   }
   [sn-focusable="disabled"] {
-    border: 3px solid red;
+    border-color: red;
   }
   [sn-is-parent] {
-    border: 3px solid #ffbdf4;
+    border-color: #ffbdf4;
   }
   [sn-constraint-to-parent] {
-    border: 3px solid #fc33339f;
+    border-color: #fc33339f;
   }
 }
 
 [sn-focused="true"] {
-  border-radius: 3px;
   border-color: rgb(255, 115, 0) !important;
   background-color: rgba($color: #fff, $alpha: 0.2) !important;
+  transform: scale(0.95);
+  transition: transform 0.2s ease;
 }

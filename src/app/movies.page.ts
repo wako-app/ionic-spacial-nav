@@ -6,11 +6,12 @@ import {
   IonTitle,
   IonContent,
 } from '@ionic/angular/standalone';
-import SpacialScrollViewComponent from 'src/shared/spacial-navigation/spacial-scroll-view.component';
+import MediaScrollViewComponent from 'src/shared/spacial-navigation/media-scroll-view.component';
 import { SpacialFocusableDirective } from 'src/shared/spacial-navigation/spacial-focusable.directive';
+import { SpacialParentFocusableDirective } from 'src/shared/spacial-navigation/spacial-parent-focusable.directive';
 
 @Component({
-  selector: 'wk-home',
+  selector: 'wk-movies',
   standalone: true,
   imports: [
     MovieItemComponent,
@@ -18,55 +19,59 @@ import { SpacialFocusableDirective } from 'src/shared/spacial-navigation/spacial
     IonToolbar,
     IonTitle,
     IonContent,
-    SpacialScrollViewComponent,
+    MediaScrollViewComponent,
     SpacialFocusableDirective,
+    SpacialParentFocusableDirective,
   ],
   template: `
     <ion-header>
       <ion-toolbar>
-        <ion-title>Home</ion-title>
+        <ion-title>Movies</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content>
       <div class="flex flex-col gap-4 p-4">
-        <wk-spacial-scroll-view parentFocusKey="homeTrending" title="Trending">
+        <wk-media-scroll-view parentFocusKey="homeTrending" title="Trending">
           @for (movie of movies; track movie.index) {
           <wk-movie-item
             wkSnFocusable
             snParentFocusKey="homeTrending"
+            [snPreventScrollOnFocus]="true"
             [snFocusKey]="'movie-trending-' + movie.index"
             [index]="movie.index"
             [title]="movie.title"
           ></wk-movie-item>
           }
-        </wk-spacial-scroll-view>
-        <wk-spacial-scroll-view parentFocusKey="homePopular" title="Popular">
+        </wk-media-scroll-view>
+        <wk-media-scroll-view parentFocusKey="homePopular" title="Popular">
           @for (movie of movies; track movie.index) {
           <wk-movie-item
             wkSnFocusable
             snParentFocusKey="homePopular"
+            [snPreventScrollOnFocus]="true"
             [snFocusKey]="'movie-popular-' + movie.index"
             [index]="movie.index"
             [title]="movie.title"
           ></wk-movie-item>
           }
-        </wk-spacial-scroll-view>
-        <wk-spacial-scroll-view parentFocusKey="homeUpcoming" title="Upcoming">
+        </wk-media-scroll-view>
+        <wk-media-scroll-view parentFocusKey="homeUpcoming" title="Upcoming">
           @for (movie of movies; track movie.index) {
           <wk-movie-item
             wkSnFocusable
             snParentFocusKey="homeUpcoming"
+            [snPreventScrollOnFocus]="true"
             [snFocusKey]="'movie-upcoming-' + movie.index"
             [index]="movie.index"
             [title]="movie.title"
           ></wk-movie-item>
           }
-        </wk-spacial-scroll-view>
+        </wk-media-scroll-view>
       </div>
     </ion-content>
   `,
 })
-export default class HomePage {
+export default class Page {
   movies = [
     { title: 'Movie 1', index: 1 },
     { title: 'Movie 2', index: 2 },

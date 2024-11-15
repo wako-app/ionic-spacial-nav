@@ -1,4 +1,3 @@
-export const ROOT_FOCUS_KEY = 'sn:root';
 export const FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_KEY = 'sn-focuskey';
 
 export const FOCUSABLE_ITEM_ATTRIBUTE_FOCUSED = 'sn-focused';

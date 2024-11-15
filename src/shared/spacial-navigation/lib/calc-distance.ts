@@ -19,12 +19,11 @@ export function verticalDistance({
     return null;
   }
 
-  const isGoingUp = higher.bottom < lower.top;
-  const isToOnTheLeft = toMetrics.left < fromMetrics.left;
-
   const distances = [];
 
   // Calculate distances between corners
+  // const isGoingUp = higher.bottom < lower.top;
+  // const isToOnTheLeft = toMetrics.left < fromMetrics.left;
 
   // if (isGoingUp) {
   //   if (isToOnTheLeft) {

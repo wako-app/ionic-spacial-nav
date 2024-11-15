@@ -33,10 +33,12 @@ import {
   warningSharp,
   bookmarkOutline,
   bookmarkSharp,
+  tvOutline,
 } from 'ionicons/icons';
 
 import { SpacialFocusableDirective } from 'src/shared/spacial-navigation/spacial-focusable.directive';
 import { SpacialNavigationService } from 'src/shared/spacial-navigation/spacial-navigation.service';
+import { SpacialParentFocusableDirective } from 'src/shared/spacial-navigation/spacial-parent-focusable.directive';
 
 @Component({
   selector: 'app-root',
@@ -60,17 +62,18 @@ import { SpacialNavigationService } from 'src/shared/spacial-navigation/spacial-
     IonRouterLink,
     IonRouterOutlet,
     SpacialFocusableDirective,
+    SpacialParentFocusableDirective,
   ],
 })
 export class AppComponent {
   public appPages = [
-    { title: 'Home', url: '/', icon: 'home' },
+    { title: 'Movies', url: '/', icon: 'tv' },
     { title: 'Buttons', url: '/buttons', icon: 'mail' },
-    { title: 'Outbox', url: '/folder/outbox', icon: 'paper-plane' },
-    { title: 'Favorites', url: '/folder/favorites', icon: 'heart' },
-    { title: 'Archived', url: '/folder/archived', icon: 'archive' },
-    { title: 'Trash', url: '/folder/trash', icon: 'trash' },
-    { title: 'Spam', url: '/folder/spam', icon: 'warning' },
+    { title: 'Overlays', url: '/overlays', icon: 'paper-plane' },
+    // { title: 'Favorites', url: '/folder/favorites', icon: 'heart' },
+    // { title: 'Archived', url: '/folder/archived', icon: 'archive' },
+    // { title: 'Trash', url: '/folder/trash', icon: 'trash' },
+    // { title: 'Spam', url: '/folder/spam', icon: 'warning' },
   ];
   public labels = ['Family', 'Friends', 'Notes', 'Work', 'Travel', 'Reminders'];
 
@@ -78,7 +81,7 @@ export class AppComponent {
 
   constructor() {
     addIcons({
-      homeOutline,
+      tvOutline,
       mailOutline,
       mailSharp,
       paperPlaneOutline,
