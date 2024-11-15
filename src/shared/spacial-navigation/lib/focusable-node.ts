@@ -22,6 +22,9 @@ export class FocusableNode {
     rightEl: null,
   };
 
+  private focusListeners: (() => void)[] = [];
+  private blurListeners: (() => void)[] = [];
+  private clickListeners: (() => void)[] = [];
   constructor(ele: HTMLElement) {
     this.element = ele;
 
@@ -38,14 +41,6 @@ export class FocusableNode {
       throw new Error(`Node ${this.element.outerHTML} has no focus key`);
     }
     return focusKey;
-  }
-
-  focus() {
-    this.element.focus();
-  }
-
-  blur() {
-    this.element.blur();
   }
 
   getOrientation() {
@@ -111,8 +106,43 @@ export class FocusableNode {
     };
   }
 
-  onEnter(event: KeyboardEvent) {
+  focus() {
+    this.element.focus({ preventScroll: true });
+  }
+
+  blur() {
+    this.element.blur();
+  }
+
+  click() {
     this.element.click();
+  }
+
+  onClick(callback: () => void) {
+    this.clickListeners.push(callback);
+    this.element.addEventListener('click', callback);
+  }
+
+  onFocus(callback: () => void) {
+    this.focusListeners.push(callback);
+    this.element.addEventListener('focus', callback);
+  }
+
+  onBlur(callback: () => void) {
+    this.blurListeners.push(callback);
+    this.element.addEventListener('blur', callback);
+  }
+
+  removeListeners() {
+    this.focusListeners.forEach((c) => {
+      this.element.removeEventListener('focus', c);
+    });
+    this.blurListeners.forEach((c) => {
+      this.element.removeEventListener('blur', c);
+    });
+    this.clickListeners.forEach((c) => {
+      this.element.removeEventListener('click', c);
+    });
   }
 }
 

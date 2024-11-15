@@ -43,19 +43,23 @@
 [sn-focusable] {
   border: 3px solid transparent;
 }
+[sn-focusable]:focus {
+  border: none;
+  outline: none;
+}
 
 .sn-debug {
   [sn-focusable="pending"] {
     border: 3px solid rgb(255, 115, 0);
   }
   [sn-focusable="active"] {
-    border: 3px solid blue;
+    border: 3px solid rgb(113, 113, 220);
   }
   [sn-focusable="disabled"] {
     border: 3px solid red;
   }
   [sn-is-parent] {
-    border: 3px solid #f035d1;
+    border: 3px solid #ffbdf4;
   }
   [sn-constraint-to-parent] {
     border: 3px solid #fc33339f;
@@ -64,6 +68,6 @@
 
 [sn-focused="true"] {
   border-radius: 3px;
-  border-color: white !important;
+  border-color: rgb(255, 115, 0) !important;
   background-color: rgba($color: #fff, $alpha: 0.2) !important;
 }

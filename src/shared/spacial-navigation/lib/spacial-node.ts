@@ -147,9 +147,3 @@ export function isNodeFocusFirstChild(node: HTMLElement) {
     node.getAttribute(FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_FIRST_CHILD) === 'true'
   );
 }
-
-export function getChildNodesByParentFocusKey(parentFocusKey: string) {
-  return getFocusableNodesBySelector({
-    selector: `[${FOCUSABLE_ITEM_ATTRIBUTE_PARENT_FOCUS_KEY}="${parentFocusKey}"]`,
-  });
-}

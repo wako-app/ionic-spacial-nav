@@ -19,6 +19,48 @@ export function verticalDistance({
     return null;
   }
 
+  const isGoingUp = higher.bottom < lower.top;
+  const isToOnTheLeft = toMetrics.left < fromMetrics.left;
+
+  const distances = [];
+
+  // Calculate distances between corners
+
+  // if (isGoingUp) {
+  //   if (isToOnTheLeft) {
+  //     const topLeftToBottomRight = calcDistance(
+  //       Math.abs(fromMetrics.left - toMetrics.right),
+  //       Math.abs(fromMetrics.top - toMetrics.bottom)
+  //     );
+  //     distances.push(topLeftToBottomRight);
+  //   }
+
+  //   if (!isToOnTheLeft) {
+  //     const topRightToBottomLeft = calcDistance(
+  //       Math.abs(fromMetrics.right - toMetrics.left),
+  //       Math.abs(fromMetrics.top - toMetrics.bottom)
+  //     );
+  //     distances.push(topRightToBottomLeft);
+  //   }
+  // } else {
+  //   if (isToOnTheLeft) {
+  //     const bottomLeftToTopRight = calcDistance(
+  //       Math.abs(fromMetrics.left - toMetrics.right),
+  //       Math.abs(fromMetrics.bottom - toMetrics.top)
+  //     );
+  //     distances.push(bottomLeftToTopRight);
+  //   }
+
+  //   if (!isToOnTheLeft) {
+  //     const bottomRightToTopLeft = calcDistance(
+  //       Math.abs(fromMetrics.right - toMetrics.left),
+  //       Math.abs(fromMetrics.bottom - toMetrics.top)
+  //     );
+  //     distances.push(bottomRightToTopLeft);
+  //   }
+  // }
+
+  // Calculate distances between center
   const left = Math.abs(fromMetrics.center.x - toMetrics.left);
   const right = Math.abs(fromMetrics.center.x - toMetrics.right);
 
@@ -36,7 +78,9 @@ export function verticalDistance({
     return null;
   }
 
-  return calcDistance(x, y);
+  distances.push(calcDistance(x, y));
+
+  return Math.min(...distances);
 }
 
 export function getTopDistance({

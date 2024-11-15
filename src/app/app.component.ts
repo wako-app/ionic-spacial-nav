@@ -62,7 +62,7 @@ import { SpacialNavigationService } from 'src/shared/spacial-navigation/spacial-
     SpacialFocusableDirective,
   ],
 })
-export class AppComponent implements AfterViewInit {
+export class AppComponent {
   public appPages = [
     { title: 'Home', url: '/', icon: 'home' },
     { title: 'Buttons', url: '/buttons', icon: 'mail' },
@@ -99,11 +99,5 @@ export class AppComponent implements AfterViewInit {
       debug: true,
       visualDebug: true,
     });
-  }
-
-  ngAfterViewInit() {
-    setTimeout(() => {
-      //this.spacialNavigationService.spacialNavigation.resetCurrentFocusedNodeNeighbors();
-    }, 1000);
   }
 }

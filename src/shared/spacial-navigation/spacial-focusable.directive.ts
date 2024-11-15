@@ -28,20 +28,12 @@ export class SpacialFocusableDirective implements AfterViewInit, OnDestroy {
 
   @Input() focusMeOnPageEnter = false;
   @Output() snFocus = new EventEmitter<ElementRef>();
+  @Output() snClick = new EventEmitter<ElementRef>();
+  @Output() snBlur = new EventEmitter<ElementRef>();
 
   private spacialNavigationService = inject(SpacialNavigationService);
   private element = inject(ElementRef);
   private focusableNode: FocusableNode | null = null;
-
-  @HostListener('keyup.enter')
-  keyPressEnter() {
-    this.element.nativeElement.click();
-  }
-
-  @HostListener('focus')
-  focus() {
-    this.snFocus.emit(this.element);
-  }
 
   ngAfterViewInit() {
     if (this.snIsParent !== undefined) {
@@ -61,6 +53,18 @@ export class SpacialFocusableDirective implements AfterViewInit, OnDestroy {
             focusKey: this.snFocusKey,
             parentFocusKey: this.snParentFocusKey,
           });
+
+        if (this.focusableNode) {
+          this.focusableNode.onClick(() => {
+            this.snClick.emit(this.element);
+          });
+          this.focusableNode.onBlur(() => {
+            this.snBlur.emit(this.element);
+          });
+          this.focusableNode.onFocus(() => {
+            this.snFocus.emit(this.element);
+          });
+        }
       }, 100);
     }
 
@@ -82,5 +86,9 @@ export class SpacialFocusableDirective implements AfterViewInit, OnDestroy {
         focusKey: this.focusableNode.getFocusKey(),
       });
     }
+    // Remove listeners
+    this.snBlur.unsubscribe();
+    this.snFocus.unsubscribe();
+    this.snClick.unsubscribe();
   }
 }

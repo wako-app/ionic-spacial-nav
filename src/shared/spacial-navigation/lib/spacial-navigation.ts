@@ -8,13 +8,11 @@ import {
 import { FocusableNode, Metrics, NeighborPosition } from './focusable-node';
 import {
   FocusableOrientation,
-  getChildNodesByParentFocusKey,
   getNodeByFocusKey,
   getNodeFocusKey,
   isNodeConstraintToParent,
   isNodeFocusable,
   isNodeFocusFirstChild,
-  isNodeIsParent,
   removeAllSnAttributes,
   setFocusableStatus,
   setNodeConstraintToParent,
@@ -29,6 +27,14 @@ import { VisualDebugger } from './visual-debugger';
 
 const DEBUG_FN_COLORS = ['#0FF', '#FF0', '#F0F'];
 
+declare type ParentEvent = 'childFocused' | 'childBlurred' | 'childClicked';
+
+interface ParentEventCallback {
+  childFocused?: (node: HTMLElement) => void;
+  childBlurred?: (node: HTMLElement) => void;
+  childClicked?: (node: HTMLElement) => void;
+}
+
 let focusKeyCounter = 0;
 
 export class SpacialNavigation {
@@ -36,6 +42,8 @@ export class SpacialNavigation {
   private saveLastFocusedChildByParentFocusKey: Map<string, boolean> =
     new Map();
   private lastFocusNodeByParentFocusKey: Map<string, FocusableNode> = new Map();
+  private callbackByParentFocusKey: Map<string, ParentEventCallback> =
+    new Map();
   private currentlyFocusedNode: FocusableNode | null = null;
   private enabled: boolean = false;
 
@@ -63,9 +71,9 @@ export class SpacialNavigation {
       document.body.classList.add('sn-debug');
       this.visualDebugger = new VisualDebugger(this);
 
-      // setTimeout(() => {
-      //   this.focusByFocusKey('BTN_0');
-      // }, 1000);
+      setTimeout(() => {
+        this.focusByFocusKey('movie-trending-1');
+      }, 500);
     }
 
     this.log('initialize', `debug: ${debug} - visualDebug: ${visualDebug}`);
@@ -91,6 +99,44 @@ export class SpacialNavigation {
 
     this.visualDebugger?.toggleDebugMode();
     this.visualDebugger?.updateDisplay();
+  }
+
+  addParentListener({
+    parentFocusKey,
+    event,
+    callback,
+  }: {
+    parentFocusKey: string;
+    event: ParentEvent;
+    callback: (node: HTMLElement) => void;
+  }) {
+    const parentCallback: ParentEventCallback =
+      this.callbackByParentFocusKey.get(parentFocusKey) ?? {};
+
+    parentCallback[event] = callback;
+
+    this.callbackByParentFocusKey.set(parentFocusKey, parentCallback);
+  }
+
+  private callParentEventCallback({
+    parentFocusKey,
+    event,
+    node,
+  }: {
+    parentFocusKey: string;
+    event: ParentEvent;
+    node: HTMLElement;
+  }) {
+    const parentCallback = this.callbackByParentFocusKey.get(parentFocusKey);
+    if (parentCallback) {
+      parentCallback[event]?.(node);
+    }
+  }
+
+  private getFocusableNodesByParentFocusKey(parentFocusKey: string) {
+    return this.focusableNodes.filter(
+      (fi) => fi.getParentFocusKey() === parentFocusKey
+    );
   }
 
   registerParentNode({
@@ -165,11 +211,11 @@ export class SpacialNavigation {
       return null;
     }
 
-    const hasFocusKey = getNodeFocusKey(node) !== null;
+    const currentFocusKey = getNodeFocusKey(node);
 
-    if (hasFocusKey) {
+    if (currentFocusKey && this.getFocusableNodeByFocusKey(currentFocusKey)) {
       // already registered
-      return null;
+      return this.getFocusableNodeByFocusKey(currentFocusKey);
     }
 
     const focusKeyAttribute = focusKey ?? `sn-fk-${focusKeyCounter++}`;
@@ -217,6 +263,8 @@ export class SpacialNavigation {
     if (!node) {
       return;
     }
+
+    node.removeListeners();
 
     const parentFocusKey = node.getParentFocusKey();
 
@@ -285,6 +333,50 @@ export class SpacialNavigation {
     }
   }
 
+  private callAction({
+    action,
+    node,
+  }: {
+    action: 'focus' | 'blur' | 'click';
+    node: FocusableNode;
+  }) {
+    switch (action) {
+      case 'focus':
+        node.focus();
+        this.callParentEventCallback({
+          parentFocusKey: node.getParentFocusKey(),
+          event: 'childFocused',
+          node: node.getElement(),
+        });
+        break;
+      case 'blur':
+        node.blur();
+        this.callParentEventCallback({
+          parentFocusKey: node.getParentFocusKey(),
+          event: 'childBlurred',
+          node: node.getElement(),
+        });
+        break;
+      case 'click':
+        node.click();
+        this.callParentEventCallback({
+          parentFocusKey: node.getParentFocusKey(),
+          event: 'childClicked',
+          node: node.getElement(),
+        });
+        break;
+    }
+
+    this.log(
+      'callAction',
+      this.getFkLogString({
+        parentFocusKey: node.getParentFocusKey(),
+        focusKey: node.getFocusKey(),
+      }),
+      action
+    );
+  }
+
   focusByFocusKey(focusKey: string) {
     const fi = this.getFocusableNodeByFocusKey(focusKey);
     if (!fi) {
@@ -298,15 +390,10 @@ export class SpacialNavigation {
     const oldItem = this.currentlyFocusedNode;
 
     if (oldItem) {
-      this.log(
-        'focusByFocusKey',
-        this.getFkLogString({
-          parentFocusKey: oldItem.getParentFocusKey(),
-          focusKey: oldItem.getFocusKey(),
-        }),
-        'call blur()'
-      );
-      oldItem.blur();
+      this.callAction({
+        action: 'blur',
+        node: oldItem,
+      });
 
       setNodeFocused(oldItem.getElement(), false);
 
@@ -322,9 +409,10 @@ export class SpacialNavigation {
 
     this.currentlyFocusedNode = fi;
 
-    this.currentlyFocusedNode.focus();
-
-    // this.onFocused({ newItem: this.currentlyFocusedNode, oldItem });
+    this.callAction({
+      action: 'focus',
+      node: fi,
+    });
 
     this.updateNeighbors(this.currentlyFocusedNode);
 
@@ -444,7 +532,9 @@ export class SpacialNavigation {
         node.getParentFocusKey() === parentFocusKey &&
         node.getFocusKey() !== focusedNode.getFocusKey()
     );
-
+    if (focusedNode.getFocusKey() === 'movie-trending-1') {
+      console.log('canMoveBottom', 'SAME PARENT');
+    }
     this.setNeighbors({
       fromNode: focusedNode,
       neighborNodes: nodesInSameParent,
@@ -472,9 +562,13 @@ export class SpacialNavigation {
         (node) =>
           node.getParentFocusKey() !== parentFocusKey &&
           node.getFocusKey() !== focusedNode.getFocusKey() &&
-          !isNodeIsParent(node.getElement()) &&
           isNodeFocusable(node.getElement())
       );
+
+      // // Includes parent nodes
+      // nodesOutsideParent.push(
+      //   ...this.focusableNodes.filter((node) => isNodeIsParent(node.getElement()))
+      // );
 
       // We can go to all directions if we don't have a neighbor in that direction already
       canMoveTop = focusedNode.getNeighborNode('top') === null;
@@ -482,6 +576,9 @@ export class SpacialNavigation {
       canMoveLeft = focusedNode.getNeighborNode('left') === null;
       canMoveRight = focusedNode.getNeighborNode('right') === null;
 
+      if (focusedNode.getFocusKey() === 'movie-trending-1') {
+        console.log('canMoveBottom', 'OUTSIDE PARENT');
+      }
       this.setNeighbors({
         fromNode: focusedNode,
         neighborNodes: nodesOutsideParent,
@@ -522,23 +619,14 @@ export class SpacialNavigation {
           }
           if (!lastFocusedInParent && focusFirstChild) {
             // Get the first child of the parent
-            const children = getChildNodesByParentFocusKey(
+            const children = this.getFocusableNodesByParentFocusKey(
               neighbor.getParentFocusKey()
             );
             if (children.length > 0) {
-              const firstChild = children[0];
-              if (firstChild) {
-                const firstChildFocusKey = getNodeFocusKey(firstChild);
-                if (firstChildFocusKey) {
-                  const firstChildFocusableNode =
-                    this.getFocusableNodeByFocusKey(firstChildFocusKey);
-                  if (firstChildFocusableNode) {
-                    focusedNode.setNeighborNode(
-                      firstChildFocusableNode,
-                      position
-                    );
-                  }
-                }
+              const firstChildFocusableNode = children[0];
+
+              if (firstChildFocusableNode) {
+                focusedNode.setNeighborNode(firstChildFocusableNode, position);
               }
             }
           }
@@ -643,6 +731,18 @@ right --> ${focusedNode.getNeighborNode('right')?.getFocusKey()}`,
       ) {
         minTopElementDist = distanceTop;
         fromNode.setNeighborNode(newItem, 'top');
+      }
+
+      if (
+        fromNode.getFocusKey() === 'movie-trending-1' &&
+        newItem.getFocusKey() === 'movie-popular-1'
+      ) {
+        console.log('canMoveBottom', distanceBottom, newItem.getElement());
+        // debugger;
+        getBottomDistance({
+          fromMetrics: metrics,
+          toMetrics: newMetrics,
+        });
       }
 
       if (
@@ -788,9 +888,12 @@ right --> ${focusedNode.getNeighborNode('right')?.getFocusKey()}`,
   private onKeyUp(event: KeyboardEvent) {
     switch (event.key) {
       case 'Enter':
-        event.preventDefault();
         if (this.currentlyFocusedNode) {
-          this.currentlyFocusedNode.onEnter(event);
+          event.preventDefault();
+          this.callAction({
+            action: 'click',
+            node: this.currentlyFocusedNode,
+          });
         }
         break;
     }
