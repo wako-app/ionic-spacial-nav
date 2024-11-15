@@ -324,6 +324,7 @@ export class SpacialNavigationService {
               node: parentNode,
               focusKey: ROOT_FOCUS_KEY,
               saveLastFocusedChild: true,
+              focusFirstChild: true,
             });
           }
         }

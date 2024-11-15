@@ -8,15 +8,18 @@ import {
 import { FocusableNode, Metrics, NeighborPosition } from './focusable-node';
 import {
   FocusableOrientation,
+  getChildNodesByParentFocusKey,
   getNodeByFocusKey,
   getNodeFocusKey,
   isNodeConstraintToParent,
   isNodeFocusable,
+  isNodeFocusFirstChild,
   isNodeIsParent,
   removeAllSnAttributes,
   setFocusableStatus,
   setNodeConstraintToParent,
   setNodeFocused,
+  setNodeFocusFirstChild,
   setNodeFocusKey,
   setNodeIsParent,
   setNodeOrientation,
@@ -96,12 +99,14 @@ export class SpacialNavigation {
     orientation,
     saveLastFocusedChild = false, // only used for parent nodes
     constraintToParent = false,
+    focusFirstChild = false,
   }: {
     node: HTMLElement;
     focusKey?: string;
     saveLastFocusedChild?: boolean;
     orientation?: FocusableOrientation;
     constraintToParent?: boolean;
+    focusFirstChild?: boolean;
   }) {
     const originText = origin ? ` - origin: ${origin}` : '';
 
@@ -127,6 +132,10 @@ export class SpacialNavigation {
 
     if (constraintToParent) {
       setNodeConstraintToParent(node);
+    }
+
+    if (focusFirstChild) {
+      setNodeFocusFirstChild(node);
     }
 
     this.log(
@@ -483,10 +492,15 @@ export class SpacialNavigation {
       });
 
       // For all neighbors outside the parent, check if there's a last focused node for that parent
+
       const positions: NeighborPosition[] = ['top', 'bottom', 'left', 'right'];
       for (const position of positions) {
         const neighbor = focusedNode.getNeighborNode(position);
         if (neighbor && neighbor.getParentFocusKey() !== parentFocusKey) {
+          const focusFirstChild = isNodeFocusFirstChild(
+            neighbor.getParentNode()
+          );
+
           const lastFocusedInParent = this.lastFocusNodeByParentFocusKey.get(
             neighbor.getParentFocusKey()
           );
@@ -505,6 +519,28 @@ export class SpacialNavigation {
               `New neighbor: fk:${lastFocusedInParent.getFocusKey()}`
             );
             focusedNode.setNeighborNode(lastFocusedInParent, position);
+          }
+          if (!lastFocusedInParent && focusFirstChild) {
+            // Get the first child of the parent
+            const children = getChildNodesByParentFocusKey(
+              neighbor.getParentFocusKey()
+            );
+            if (children.length > 0) {
+              const firstChild = children[0];
+              if (firstChild) {
+                const firstChildFocusKey = getNodeFocusKey(firstChild);
+                if (firstChildFocusKey) {
+                  const firstChildFocusableNode =
+                    this.getFocusableNodeByFocusKey(firstChildFocusKey);
+                  if (firstChildFocusableNode) {
+                    focusedNode.setNeighborNode(
+                      firstChildFocusableNode,
+                      position
+                    );
+                  }
+                }
+              }
+            }
           }
         }
       }

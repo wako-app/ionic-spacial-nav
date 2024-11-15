@@ -1,12 +1,17 @@
 export const ROOT_FOCUS_KEY = 'sn:root';
 export const FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_KEY = 'sn-focuskey';
-export const FOCUSABLE_ITEM_ATTRIBUTE_FOCUSABLE = 'sn-focusable';
+
 export const FOCUSABLE_ITEM_ATTRIBUTE_FOCUSED = 'sn-focused';
 export const FOCUSABLE_ITEM_ATTRIBUTE_PARENT_FOCUS_KEY = 'sn-parent-focuskey';
 export const FOCUSABLE_ITEM_ATTRIBUTE_IS_PARENT = 'sn-is-parent';
 export const FOCUSABLE_ITEM_ATTRIBUTE_ORIENTATION = 'sn-orientation';
 export const FOCUSABLE_ITEM_ATTRIBUTE_CONSTRAINT_TO_PARENT =
   'sn-constraint-to-parent';
+export const FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_FIRST_CHILD =
+  'sn-focus-first-child';
+
+// TODO : TO REMOVE?
+export const FOCUSABLE_ITEM_ATTRIBUTE_FOCUSABLE = 'sn-focusable';
 
 const allSnAttributes = [
   FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_KEY,
@@ -16,6 +21,7 @@ const allSnAttributes = [
   FOCUSABLE_ITEM_ATTRIBUTE_IS_PARENT,
   FOCUSABLE_ITEM_ATTRIBUTE_ORIENTATION,
   FOCUSABLE_ITEM_ATTRIBUTE_CONSTRAINT_TO_PARENT,
+  FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_FIRST_CHILD,
 ];
 
 export type FocusableStatus = 'pending' | 'active' | 'disabled';
@@ -129,5 +135,21 @@ export function setAllNodesDisabled(parent?: HTMLElement) {
 export function removeAllSnAttributes(node: HTMLElement) {
   allSnAttributes.forEach((attribute) => {
     node.removeAttribute(attribute);
+  });
+}
+
+export function setNodeFocusFirstChild(node: HTMLElement) {
+  node.setAttribute(FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_FIRST_CHILD, 'true');
+}
+
+export function isNodeFocusFirstChild(node: HTMLElement) {
+  return (
+    node.getAttribute(FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_FIRST_CHILD) === 'true'
+  );
+}
+
+export function getChildNodesByParentFocusKey(parentFocusKey: string) {
+  return getFocusableNodesBySelector({
+    selector: `[${FOCUSABLE_ITEM_ATTRIBUTE_PARENT_FOCUS_KEY}="${parentFocusKey}"]`,
   });
 }
