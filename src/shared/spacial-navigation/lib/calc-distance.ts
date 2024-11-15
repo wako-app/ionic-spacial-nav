@@ -197,3 +197,19 @@ export function getRightDistance({
     preferCloserY,
   });
 }
+
+export function getElementMetrics(element: HTMLElement): Metrics {
+  const clientRect = element.getBoundingClientRect();
+  return {
+    width: clientRect.width,
+    height: clientRect.height,
+    left: clientRect.left,
+    right: clientRect.left + clientRect.width,
+    top: clientRect.top,
+    bottom: clientRect.top + clientRect.height,
+    center: {
+      x: clientRect.left + clientRect.width / 2,
+      y: clientRect.top + clientRect.height / 2,
+    },
+  };
+}

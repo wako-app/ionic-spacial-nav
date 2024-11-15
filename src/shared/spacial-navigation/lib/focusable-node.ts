@@ -1,3 +1,4 @@
+import { getElementMetrics } from './calc-distance';
 import { Point } from './point';
 import {
   getNodeByFocusKey,
@@ -91,23 +92,11 @@ export class FocusableNode {
   }
 
   getMetrics(): Metrics {
-    const clientRect = this.element.getBoundingClientRect();
-    return {
-      width: clientRect.width,
-      height: clientRect.height,
-      left: clientRect.left,
-      right: clientRect.left + clientRect.width,
-      top: clientRect.top,
-      bottom: clientRect.top + clientRect.height,
-      center: {
-        x: clientRect.left + clientRect.width / 2,
-        y: clientRect.top + clientRect.height / 2,
-      },
-    };
+    return getElementMetrics(this.element);
   }
 
   focus() {
-    this.element.focus({ preventScroll: true });
+    this.element.focus({ preventScroll: false });
   }
 
   blur() {

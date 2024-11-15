@@ -1,6 +1,7 @@
 import {
   calcDistance,
   getBottomDistance,
+  getElementMetrics,
   getLeftDistance,
   getRightDistance,
   getTopDistance,
@@ -72,7 +73,7 @@ export class SpacialNavigation {
       this.visualDebugger = new VisualDebugger(this);
 
       setTimeout(() => {
-        this.focusByFocusKey('movie-trending-1');
+        this.focusByFocusKey('sn-fk-0');
       }, 500);
     }
 
@@ -542,7 +543,12 @@ export class SpacialNavigation {
       canMoveBottom,
       canMoveLeft,
       canMoveRight,
+      nodesAreInSameParent: true,
     });
+
+    if (focusedNode.getFocusKey() === 'sn-fk-0') {
+      // debugger;
+    }
 
     let nodesOutsideParent: FocusableNode[] = [];
     if (isNodeConstraintToParent(parentNode)) {
@@ -586,6 +592,7 @@ export class SpacialNavigation {
         canMoveBottom,
         canMoveLeft,
         canMoveRight,
+        nodesAreInSameParent: false,
       });
 
       // For all neighbors outside the parent, check if there's a last focused node for that parent
@@ -661,6 +668,7 @@ right --> ${focusedNode.getNeighborNode('right')?.getFocusKey()}`,
     canMoveBottom,
     canMoveLeft,
     canMoveRight,
+    nodesAreInSameParent = false,
   }: {
     fromNode: FocusableNode;
     neighborNodes: FocusableNode[];
@@ -668,8 +676,9 @@ right --> ${focusedNode.getNeighborNode('right')?.getFocusKey()}`,
     canMoveBottom: boolean;
     canMoveLeft: boolean;
     canMoveRight: boolean;
+    nodesAreInSameParent?: boolean;
   }) {
-    const metrics = fromNode.getMetrics();
+    const fromMetrics = fromNode.getMetrics();
 
     const nodeWithMetrics: {
       node: FocusableNode;
@@ -683,143 +692,171 @@ right --> ${focusedNode.getNeighborNode('right')?.getFocusKey()}`,
       });
     }
 
-    let minTopElementDist: number | undefined;
-    let minBottomElementDist: number | undefined;
-    let minLeftElementDist: number | undefined;
-    let minRightElementDist: number | undefined;
+    const candidateNodeByDirection: Record<
+      NeighborPosition,
+      {
+        node: FocusableNode;
+        metrics: Metrics;
+      }[]
+    > = {
+      top: [],
+      bottom: [],
+      left: [],
+      right: [],
+    };
 
-    for (const { node: newItem, metrics: newMetrics } of nodeWithMetrics) {
-      // Skip if same node
-      if (fromNode === newItem) continue;
+    if (nodesAreInSameParent) {
+      candidateNodeByDirection.top = nodeWithMetrics;
+      candidateNodeByDirection.bottom = nodeWithMetrics;
+      candidateNodeByDirection.left = nodeWithMetrics;
+      candidateNodeByDirection.right = nodeWithMetrics;
+    } else {
+      const fromParentMetrics = getElementMetrics(fromNode.getParentNode());
 
-      // Calculate distances in each direction
-      const distanceTop = canMoveTop
-        ? getTopDistance({
-            fromMetrics: metrics,
-            toMetrics: newMetrics,
-          })
-        : null;
+      // Get parent nodes metrics
+      const parentNodes = new Map<
+        string,
+        { parentNode: HTMLElement; parentMetrics: Metrics }
+      >();
+      for (const { node } of nodeWithMetrics) {
+        const parentFocusKey = node.getParentFocusKey();
+        if (!parentFocusKey || parentNodes.has(parentFocusKey)) continue;
 
-      const distanceBottom = canMoveBottom
-        ? getBottomDistance({
-            fromMetrics: metrics,
-            toMetrics: newMetrics,
-          })
-        : null;
+        const parentElement = node.getParentNode();
+        const parentMetrics = getElementMetrics(parentElement);
 
-      const distanceLeft = canMoveLeft
-        ? getLeftDistance({
-            fromMetrics: metrics,
-            toMetrics: newMetrics,
-            preferCloserY: true, // Prefer same row for horizontal movement
-          })
-        : null;
-
-      const distanceRight = canMoveRight
-        ? getRightDistance({
-            fromMetrics: metrics,
-            toMetrics: newMetrics,
-            preferCloserY: true, // Prefer same row for horizontal movement
-          })
-        : null;
-
-      // Update neighbors if this is the closest node in each direction
-      if (
-        canMoveTop &&
-        distanceTop !== null &&
-        (minTopElementDist === undefined || minTopElementDist > distanceTop)
-      ) {
-        minTopElementDist = distanceTop;
-        fromNode.setNeighborNode(newItem, 'top');
-      }
-
-      if (
-        fromNode.getFocusKey() === 'movie-trending-1' &&
-        newItem.getFocusKey() === 'movie-popular-1'
-      ) {
-        console.log('canMoveBottom', distanceBottom, newItem.getElement());
-        // debugger;
-        getBottomDistance({
-          fromMetrics: metrics,
-          toMetrics: newMetrics,
+        parentNodes.set(parentFocusKey, {
+          parentNode: parentElement,
+          parentMetrics,
         });
       }
 
-      if (
-        canMoveBottom &&
-        distanceBottom !== null &&
-        (minBottomElementDist === undefined ||
-          minBottomElementDist > distanceBottom)
-      ) {
-        minBottomElementDist = distanceBottom;
-        fromNode.setNeighborNode(newItem, 'bottom');
+      // Filter nodes based on parent position relative to current node
+      for (const [parentFocusKey, { parentMetrics }] of parentNodes) {
+        const isParentAbove = parentMetrics.bottom <= fromParentMetrics.top;
+        const isParentBelow = parentMetrics.top >= fromParentMetrics.bottom;
+        const isParentLeft = parentMetrics.right <= fromParentMetrics.left;
+        const isParentRight = parentMetrics.left >= fromParentMetrics.right;
+
+        const nodesWithMetricsInParent = nodeWithMetrics.filter(
+          ({ node }) => node.getParentFocusKey() === parentFocusKey
+        );
+        if (isParentAbove) {
+          candidateNodeByDirection.top.push(...nodesWithMetricsInParent);
+        }
+        if (isParentBelow) {
+          candidateNodeByDirection.bottom.push(...nodesWithMetricsInParent);
+        }
+        if (isParentLeft) {
+          candidateNodeByDirection.left.push(...nodesWithMetricsInParent);
+        }
+        if (isParentRight) {
+          candidateNodeByDirection.right.push(...nodesWithMetricsInParent);
+        }
       }
 
-      if (
-        canMoveLeft &&
-        distanceLeft !== null &&
-        (minLeftElementDist === undefined || minLeftElementDist > distanceLeft)
-      ) {
-        minLeftElementDist = distanceLeft;
-        fromNode.setNeighborNode(newItem, 'left');
-      }
-
-      if (
-        canMoveRight &&
-        distanceRight !== null &&
-        (minRightElementDist === undefined ||
-          minRightElementDist > distanceRight)
-      ) {
-        minRightElementDist = distanceRight;
-        fromNode.setNeighborNode(newItem, 'right');
+      if (fromNode.getFocusKey() === 'sn-fk-0') {
+        //debugger;
       }
     }
 
-    // If no neighbors found with preferCloserY=true, try again with preferCloserY=false for horizontal directions
-    const checkLeft = minLeftElementDist === undefined;
-    const checkRight = minRightElementDist === undefined;
-    if (checkLeft || checkRight) {
-      for (const { node: newItem, metrics: newMetrics } of nodeWithMetrics) {
-        if (fromNode === newItem) continue;
+    const directions: NeighborPosition[] = ['top', 'bottom', 'left', 'right'];
 
-        if (checkLeft) {
-          const distanceLeft = canMoveLeft
-            ? getLeftDistance({
-                fromMetrics: metrics,
-                toMetrics: newMetrics,
-                preferCloserY: false,
-              })
-            : null;
+    for (const direction of directions) {
+      let minElementDist: number | undefined;
 
-          if (
-            canMoveLeft &&
-            distanceLeft !== null &&
-            (minLeftElementDist === undefined ||
-              minLeftElementDist > distanceLeft)
-          ) {
-            minLeftElementDist = distanceLeft;
-            fromNode.setNeighborNode(newItem, 'left');
-          }
+      if (direction === 'top' && !canMoveTop) continue;
+      if (direction === 'bottom' && !canMoveBottom) continue;
+      if (direction === 'left' && !canMoveLeft) continue;
+      if (direction === 'right' && !canMoveRight) continue;
+
+      for (const {
+        node: newItem,
+        metrics: newMetrics,
+      } of candidateNodeByDirection[direction]) {
+        // Calculate distances in each direction
+        let distance: number | null = null;
+        switch (direction) {
+          case 'top':
+            distance = getTopDistance({
+              fromMetrics: fromMetrics,
+              toMetrics: newMetrics,
+            });
+            break;
+          case 'bottom':
+            distance = getBottomDistance({
+              fromMetrics: fromMetrics,
+              toMetrics: newMetrics,
+            });
+            break;
+          case 'left':
+            distance = getLeftDistance({
+              fromMetrics: fromMetrics,
+              toMetrics: newMetrics,
+              preferCloserY: true,
+            });
+            break;
+          case 'right':
+            distance = getRightDistance({
+              fromMetrics: fromMetrics,
+              toMetrics: newMetrics,
+              preferCloserY: true,
+            });
+            break;
         }
 
-        if (checkRight) {
-          const distanceRight = canMoveRight
-            ? getRightDistance({
-                fromMetrics: metrics,
-                toMetrics: newMetrics,
-                preferCloserY: false,
-              })
-            : null;
+        // Update neighbors if this is the closest node in each direction
+        if (
+          distance !== null &&
+          (minElementDist === undefined || minElementDist > distance)
+        ) {
+          minElementDist = distance;
+          fromNode.setNeighborNode(newItem, direction);
+        }
+      }
 
-          if (
-            canMoveRight &&
-            distanceRight !== null &&
-            (minRightElementDist === undefined ||
-              minRightElementDist > distanceRight)
-          ) {
-            minRightElementDist = distanceRight;
-            fromNode.setNeighborNode(newItem, 'right');
-          }
+      if (fromNode.getFocusKey() === 'sn-fk-0') {
+        // debugger;
+      }
+
+      // If we are in the same parent or we have a min distance, we don't need to check other nodes in this direction
+      if (
+        nodesAreInSameParent ||
+        minElementDist !== undefined ||
+        direction === 'top' ||
+        direction === 'bottom'
+      ) {
+        continue;
+      }
+
+      for (const {
+        node: newItem,
+        metrics: newMetrics,
+      } of candidateNodeByDirection[direction]) {
+        // Calculate distances in each direction
+        let distance: number | null = null;
+        switch (direction) {
+          case 'left':
+            distance = getLeftDistance({
+              fromMetrics: fromMetrics,
+              toMetrics: newMetrics,
+              preferCloserY: false,
+            });
+            break;
+          case 'right':
+            distance = getRightDistance({
+              fromMetrics: fromMetrics,
+              toMetrics: newMetrics,
+              preferCloserY: false,
+            });
+            break;
+        }
+        if (
+          distance !== null &&
+          (minElementDist === undefined || minElementDist > distance)
+        ) {
+          minElementDist = distance;
+          fromNode.setNeighborNode(newItem, direction);
         }
       }
     }

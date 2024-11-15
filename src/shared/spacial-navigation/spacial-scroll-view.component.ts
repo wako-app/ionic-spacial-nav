@@ -45,11 +45,11 @@ export default class SpacialScrollViewComponent implements AfterViewInit {
   private spacialNavigationService = inject(SpacialNavigationService);
 
   ngAfterViewInit() {
-    this.spacialNavigationService.spacialNavigation.addParentListener({
-      parentFocusKey: this.parentFocusKey,
-      event: 'childFocused',
-      callback: (newNode) => this.onChildFocused(newNode),
-    });
+    // this.spacialNavigationService.spacialNavigation.addParentListener({
+    //   parentFocusKey: this.parentFocusKey,
+    //   event: 'childFocused',
+    //   callback: (newNode) => this.onChildFocused(newNode),
+    // });
   }
 
   onChildFocused(newNode: HTMLElement) {
