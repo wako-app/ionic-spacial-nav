@@ -55,6 +55,8 @@ export class VisualDebugger {
 
       this.printDebugLinesForItem(i, fi);
     }
+
+    this.spacialNavigation.log('updateDisplay', 'done');
   }
 
   private clearDisplay = function () {
@@ -82,7 +84,7 @@ export class VisualDebugger {
         currentItemMetrics.center.x - 5,
         currentItemMetrics.top,
         'red', // going up
-        angle
+        angle,
       );
     }
 
@@ -99,7 +101,7 @@ export class VisualDebugger {
         currentItemMetrics.center.x + 5,
         currentItemMetrics.bottom,
         'purple', // going down
-        angle
+        angle,
       );
     }
 
@@ -117,7 +119,7 @@ export class VisualDebugger {
         currentItemMetrics.left,
         currentItemMetrics.center.y + 5,
         'green', // going left
-        angle
+        angle,
       );
     }
 
@@ -134,18 +136,12 @@ export class VisualDebugger {
         currentItemMetrics.right,
         currentItemMetrics.center.y - 5,
         'orange', // going right
-        angle
+        angle,
       );
     }
   }
 
-  private printDebugLine(
-    length: number,
-    startX: number,
-    startY: number,
-    color: string,
-    angle: number
-  ) {
+  private printDebugLine(length: number, startX: number, startY: number, color: string, angle: number) {
     const lineElement = document.createElement('div');
     lineElement.classList.add(DBEUG_LINE_CLASSNAME);
     lineElement.classList.add('marker');

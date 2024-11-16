@@ -5,6 +5,8 @@ import {
   getNodeFocusKey,
   getNodeOrientation,
   getNodeParentFocusKey,
+  getNodeStatus,
+  setFocusableStatus,
 } from './spacial-node';
 
 export type NeighborPosition = 'top' | 'bottom' | 'left' | 'right';
@@ -27,10 +29,29 @@ export class FocusableNode {
   private blurListeners: (() => void)[] = [];
   private clickListeners: (() => void)[] = [];
 
-  constructor(ele: HTMLElement, private preventScrollOnFocus = false) {
+  constructor(
+    ele: HTMLElement,
+    private preventScrollOnFocus = false,
+  ) {
     this.element = ele;
 
     this.resetNeighbors();
+  }
+
+  isFocusable() {
+    if (this.element.style.display === 'none' || this.element.style.visibility === 'hidden') {
+      return false;
+    }
+    const status = getNodeStatus(this.element);
+    return status === 'active';
+  }
+
+  disable() {
+    setFocusableStatus(this.element, 'disabled');
+  }
+
+  enable() {
+    setFocusableStatus(this.element, 'active');
   }
 
   getElement() {

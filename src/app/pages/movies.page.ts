@@ -1,11 +1,6 @@
 import { Component } from '@angular/core';
+import { IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular/standalone';
 import MovieItemComponent from 'src/shared/movie-item.component';
-import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-} from '@ionic/angular/standalone';
 import MediaScrollViewComponent from 'src/shared/spacial-navigation/media-scroll-view.component';
 import { SpacialFocusableDirective } from 'src/shared/spacial-navigation/spacial-focusable.directive';
 import { SpacialParentFocusableDirective } from 'src/shared/spacial-navigation/spacial-parent-focusable.directive';
@@ -31,40 +26,40 @@ import { SpacialParentFocusableDirective } from 'src/shared/spacial-navigation/s
     </ion-header>
     <ion-content>
       <div class="flex flex-col gap-4 p-4">
-        <wk-media-scroll-view parentFocusKey="homeTrending" title="Trending">
+        <wk-media-scroll-view parentFocusKey="moviesTrending" title="Trending">
           @for (movie of movies; track movie.index) {
-          <wk-movie-item
-            wkSnFocusable
-            snParentFocusKey="homeTrending"
-            [snPreventScrollOnFocus]="true"
-            [snFocusKey]="'movie-trending-' + movie.index"
-            [index]="movie.index"
-            [title]="movie.title"
-          ></wk-movie-item>
+            <wk-movie-item
+              wkSnFocusable
+              snParentFocusKey="moviesTrending"
+              [snPreventScrollOnFocus]="true"
+              [snFocusKey]="'movie-trending-' + movie.index"
+              [index]="movie.index"
+              [title]="movie.title"
+            ></wk-movie-item>
           }
         </wk-media-scroll-view>
-        <wk-media-scroll-view parentFocusKey="homePopular" title="Popular">
+        <wk-media-scroll-view parentFocusKey="moviesPopular" title="Popular">
           @for (movie of movies; track movie.index) {
-          <wk-movie-item
-            wkSnFocusable
-            snParentFocusKey="homePopular"
-            [snPreventScrollOnFocus]="true"
-            [snFocusKey]="'movie-popular-' + movie.index"
-            [index]="movie.index"
-            [title]="movie.title"
-          ></wk-movie-item>
+            <wk-movie-item
+              wkSnFocusable
+              snParentFocusKey="moviesPopular"
+              [snPreventScrollOnFocus]="true"
+              [snFocusKey]="'movie-popular-' + movie.index"
+              [index]="movie.index"
+              [title]="movie.title"
+            ></wk-movie-item>
           }
         </wk-media-scroll-view>
-        <wk-media-scroll-view parentFocusKey="homeUpcoming" title="Upcoming">
+        <wk-media-scroll-view parentFocusKey="moviesUpcoming" title="Upcoming">
           @for (movie of movies; track movie.index) {
-          <wk-movie-item
-            wkSnFocusable
-            snParentFocusKey="homeUpcoming"
-            [snPreventScrollOnFocus]="true"
-            [snFocusKey]="'movie-upcoming-' + movie.index"
-            [index]="movie.index"
-            [title]="movie.title"
-          ></wk-movie-item>
+            <wk-movie-item
+              wkSnFocusable
+              snParentFocusKey="moviesUpcoming"
+              [snPreventScrollOnFocus]="true"
+              [snFocusKey]="'movie-upcoming-' + movie.index"
+              [index]="movie.index"
+              [title]="movie.title"
+            ></wk-movie-item>
           }
         </wk-media-scroll-view>
       </div>

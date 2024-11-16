@@ -1,12 +1,4 @@
-import {
-  AfterViewInit,
-  Component,
-  ElementRef,
-  HostListener,
-  inject,
-  Input,
-  ViewChild,
-} from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, inject, Input, ViewChild } from '@angular/core';
 
 import { NgClass } from '@angular/common';
 import { SpacialNavigationService } from './spacial-navigation.service';
@@ -25,12 +17,9 @@ import { SpacialParentFocusableDirective } from './spacial-parent-focusable.dire
       [ngClass]="{ 'bg-orange-400/50': isFocused }"
     >
       @if (title) {
-      <h2 class="text-2xl font-bold mb-4">{{ title }}</h2>
+        <h2 class="text-2xl font-bold mb-4">{{ title }}</h2>
       }
-      <div
-        #scrollContainer
-        [class]="'flex flew-row gap-4 overflow-x-auto ' + class"
-      >
+      <div #scrollContainer [class]="'flex flew-row gap-4 overflow-x-auto ' + class">
         <ng-content></ng-content>
       </div>
     </div>
@@ -59,8 +48,7 @@ export default class MediaScrollViewComponent implements AfterViewInit {
         this.isFocused = true;
         if (this.scrollContainer?.nativeElement) {
           // Scroll to show title by getting parent element's position
-          const parentElement =
-            this.scrollContainer.nativeElement.parentElement;
+          const parentElement = this.scrollContainer.nativeElement.parentElement;
           if (parentElement) {
             parentElement.scrollIntoView({
               behavior: 'smooth',
@@ -80,13 +68,9 @@ export default class MediaScrollViewComponent implements AfterViewInit {
   onChildFocused(newNode: HTMLElement) {
     const newNodeRect = newNode.getBoundingClientRect();
 
-    const containerRect =
-      this.scrollContainer.nativeElement.getBoundingClientRect();
+    const containerRect = this.scrollContainer.nativeElement.getBoundingClientRect();
 
-    const scrollLeft =
-      newNodeRect.left -
-      containerRect.left +
-      this.scrollContainer.nativeElement.scrollLeft;
+    const scrollLeft = newNodeRect.left - containerRect.left + this.scrollContainer.nativeElement.scrollLeft;
 
     this.scrollContainer.nativeElement.scrollTo({
       left: scrollLeft,
@@ -95,7 +79,7 @@ export default class MediaScrollViewComponent implements AfterViewInit {
 
     setTimeout(() => {
       this.spacialNavigationService.spacialNavigation.resetCurrentFocusedNodeNeighbors();
-    }, 300);
+    }, 1000);
   }
 
   @HostListener('keydown.backspace', ['$event'])

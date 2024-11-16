@@ -1,17 +1,18 @@
 import { Component, inject } from '@angular/core';
 
 import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButton,
   ActionSheetController,
+  IonButton,
+  IonContent,
+  IonHeader,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
+import { SpacialParentFocusableDirective } from 'src/shared/spacial-navigation/spacial-parent-focusable.directive';
 @Component({
   selector: 'wk-buttons',
   standalone: true,
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent, IonButton],
+  imports: [IonHeader, IonToolbar, IonTitle, IonContent, IonButton, SpacialParentFocusableDirective],
   template: `
     <ion-header>
       <ion-toolbar>
@@ -19,29 +20,21 @@ import {
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <ion-button (click)="presentActionSheet()">
-        BTN 0 (action sheet)
-      </ion-button>
+      <ion-button (click)="presentActionSheet()"> BTN 0 (action sheet) </ion-button>
       <div style="display: flex; gap: 10px; justify-content: space-between">
         <ion-button>BTN -1</ion-button>
-        <ion-button (click)="presentActionSheet()">
-          BTN 0 (action sheet)
-        </ion-button>
+        <ion-button (click)="presentActionSheet()"> BTN 0 (action sheet) </ion-button>
       </div>
 
       <ion-button>BTN 1</ion-button>
-      <ion-button (click)="presentActionSheet()"
-        >BTN 2 (action sheet)</ion-button
-      >
+      <ion-button (click)="presentActionSheet()">BTN 2 (action sheet)</ion-button>
 
       <ion-button>BTN 3</ion-button>
-      <ion-button (click)="presentActionSheet()"
-        >BTN 4 (action sheet)</ion-button
-      >
+      <ion-button (click)="presentActionSheet()">BTN 4 (action sheet)</ion-button>
 
       <ion-button>BTN 5</ion-button>
 
-      <div class="flex gap-2 justify-between mb-4">
+      <div class="flex gap-2 justify-between mb-4" wkSnParentFocusable snFocusKey="btn_group_1">
         <ion-button size="small">Random 1</ion-button>
         <ion-button size="large">Random 2</ion-button>
         <ion-button>Random 3</ion-button>

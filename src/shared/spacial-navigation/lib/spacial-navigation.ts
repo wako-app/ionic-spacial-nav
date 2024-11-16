@@ -1,26 +1,18 @@
-import {
-  calcDistance,
-  getBottomDistance,
-  getElementMetrics,
-  getLeftDistance,
-  getRightDistance,
-  getTopDistance,
-} from './calc-distance';
-import { FocusableNode, Metrics, NeighborPosition } from './focusable-node';
+import { setNeighbors } from './calc-distance';
+import { FocusableNode, NeighborPosition } from './focusable-node';
 import {
   FocusableOrientation,
   getNodeByFocusKey,
   getNodeFocusKey,
-  getNodeParentFocusKey,
   isNodeConstraintToParent,
-  isNodeFocusable,
   isNodeFocusFirstChild,
+  isNodeFocusable,
   removeAllSnAttributes,
   setFocusableStatus,
   setNodeConstraintToParent,
-  setNodeFocused,
   setNodeFocusFirstChild,
   setNodeFocusKey,
+  setNodeFocused,
   setNodeIsParent,
   setNodeOrientation,
   setNodeParentFocusKey,
@@ -29,12 +21,7 @@ import { VisualDebugger } from './visual-debugger';
 
 const DEBUG_FN_COLORS = ['#0FF', '#FF0', '#F0F'];
 
-declare type ParentEvent =
-  | 'parentFocused'
-  | 'parentBlurred'
-  | 'childFocused'
-  | 'childBlurred'
-  | 'childClicked';
+declare type ParentEvent = 'parentFocused' | 'parentBlurred' | 'childFocused' | 'childBlurred' | 'childClicked';
 
 interface ParentEventCallback {
   parentFocused?: (node: HTMLElement) => void;
@@ -48,11 +35,9 @@ let focusKeyCounter = 0;
 
 export class SpacialNavigation {
   private focusableNodes: FocusableNode[] = [];
-  private saveLastFocusedChildByParentFocusKey: Map<string, boolean> =
-    new Map();
+  private saveLastFocusedChildByParentFocusKey: Map<string, boolean> = new Map();
   private lastFocusNodeByParentFocusKey: Map<string, FocusableNode> = new Map();
-  private callbackByParentFocusKey: Map<string, ParentEventCallback> =
-    new Map();
+  private callbackByParentFocusKey: Map<string, ParentEventCallback> = new Map();
   private currentlyFocusedNode: FocusableNode | null = null;
   private enabled: boolean = false;
 
@@ -67,22 +52,16 @@ export class SpacialNavigation {
     return this.currentlyFocusedNode?.getFocusKey() ?? undefined;
   }
 
-  constructor({
-    debug = false,
-    visualDebug = false,
-  }: {
-    debug?: boolean;
-    visualDebug?: boolean;
-  }) {
+  constructor({ debug = false, visualDebug = false }: { debug?: boolean; visualDebug?: boolean }) {
     this.debug = debug;
 
     if (visualDebug) {
       document.body.classList.add('sn-debug');
       this.visualDebugger = new VisualDebugger(this);
 
-      // setTimeout(() => {
-      //   this.focusByFocusKey('sn-fk-0');
-      // }, 500);
+      setTimeout(() => {
+        this.focusByFocusKey('homeTrending');
+      }, 500);
     }
 
     this.log('initialize', `debug: ${debug} - visualDebug: ${visualDebug}`);
@@ -119,8 +98,7 @@ export class SpacialNavigation {
     event: ParentEvent;
     callback: (node: HTMLElement) => void;
   }) {
-    const parentCallback: ParentEventCallback =
-      this.callbackByParentFocusKey.get(parentFocusKey) ?? {};
+    const parentCallback: ParentEventCallback = this.callbackByParentFocusKey.get(parentFocusKey) ?? {};
 
     parentCallback[event] = callback;
 
@@ -143,9 +121,7 @@ export class SpacialNavigation {
   }
 
   private getFocusableNodesByParentFocusKey(parentFocusKey: string) {
-    return this.focusableNodes.filter(
-      (fi) => fi.getParentFocusKey() === parentFocusKey
-    );
+    return this.focusableNodes.filter((fi) => fi.getParentFocusKey() === parentFocusKey);
   }
 
   registerParentNode({
@@ -176,10 +152,7 @@ export class SpacialNavigation {
     setNodeFocusKey(node, focusKeyAttribute);
     setNodeIsParent(node);
 
-    this.saveLastFocusedChildByParentFocusKey.set(
-      focusKeyAttribute,
-      saveLastFocusedChild
-    );
+    this.saveLastFocusedChildByParentFocusKey.set(focusKeyAttribute, saveLastFocusedChild);
 
     if (orientation) {
       setNodeOrientation(node, orientation);
@@ -193,10 +166,7 @@ export class SpacialNavigation {
       setNodeFocusFirstChild(node);
     }
 
-    this.log(
-      'registerParentNode',
-      `registerParentNode pfk:${focusKeyAttribute}${originText}`
-    );
+    this.log('registerParentNode', `registerParentNode pfk:${focusKeyAttribute}${originText}`);
 
     return focusKeyAttribute;
   }
@@ -233,12 +203,6 @@ export class SpacialNavigation {
     setNodeFocusKey(node, focusKeyAttribute);
     setNodeParentFocusKey(node, parentFocusKey);
 
-    // Check if parent exists
-    const parentNode = getNodeByFocusKey(parentFocusKey);
-    if (!parentNode) {
-      throw new Error(`Parent node ${parentFocusKey} not found`);
-    }
-
     node.setAttribute('tabindex', '0');
 
     this.log(
@@ -246,7 +210,7 @@ export class SpacialNavigation {
       `${this.getFkLogString({
         parentFocusKey,
         focusKey: focusKeyAttribute,
-      })}${originText} - shouldFocus: ${focusNode}`
+      })}${originText} - shouldFocus: ${focusNode}`,
     );
 
     const fi = this.addFocusableNode({ node, preventScrollOnFocus });
@@ -288,9 +252,7 @@ export class SpacialNavigation {
       this.saveLastFocusedChildByParentFocusKey.delete(parentFocusKey);
       this.lastFocusNodeByParentFocusKey.delete(parentFocusKey);
     }
-    this.focusableNodes = this.focusableNodes.filter(
-      (fi) => fi.getFocusKey() !== focusKey
-    );
+    this.focusableNodes = this.focusableNodes.filter((fi) => fi.getFocusKey() !== focusKey);
 
     if (this.currentlyFocusedNode?.getFocusKey() === focusKey) {
       this.currentlyFocusedNode = null;
@@ -300,6 +262,24 @@ export class SpacialNavigation {
     removeAllSnAttributes(node.getElement());
 
     this.log('unregisterParentNode', `pfk:${parentFocusKey}/fk:${focusKey}`);
+  }
+
+  disableNode({ focusKey }: { focusKey: string }) {
+    const node = this.getFocusableNodeByFocusKey(focusKey);
+    if (node) {
+      node.disable();
+      this.resetCurrentFocusedNodeNeighbors();
+      this.log('disableNode', this.getFkLogString({ parentFocusKey: node.getParentFocusKey(), focusKey }));
+    }
+  }
+
+  enableNode({ focusKey }: { focusKey: string }) {
+    const node = this.getFocusableNodeByFocusKey(focusKey);
+    if (node) {
+      node.enable();
+      this.resetCurrentFocusedNodeNeighbors();
+      this.log('enableNode', this.getFkLogString({ parentFocusKey: node.getParentFocusKey(), focusKey }));
+    }
   }
 
   resetCurrentFocusedNodeNeighbors() {
@@ -327,20 +307,13 @@ export class SpacialNavigation {
   }
 
   private getFocusableNodeByFocusKey(focusKey: string) {
-    return (
-      this.focusableNodes.find((fi) => fi.getFocusKey() === focusKey) || null
-    );
+    return this.focusableNodes.find((fi) => fi.getFocusKey() === focusKey) || null;
   }
 
-  private saveLastFocusedChild({
-    parentFocusKey,
-    node,
-  }: {
-    parentFocusKey: string;
-    node: FocusableNode;
-  }) {
+  private saveLastFocusedChild({ parentFocusKey, node }: { parentFocusKey: string; node: FocusableNode }) {
     if (this.saveLastFocusedChildByParentFocusKey.get(parentFocusKey)) {
       this.lastFocusNodeByParentFocusKey.set(parentFocusKey, node);
+      this.log('saveLastFocusedChild', this.getFkLogString({ parentFocusKey, focusKey: node.getFocusKey() }));
     }
   }
 
@@ -371,12 +344,7 @@ export class SpacialNavigation {
           node: node.getElement(),
         });
         const parentNode = node.getParentNode();
-        if (
-          parentNode &&
-          oldParentFocusKey &&
-          newParentFocusKey &&
-          oldParentFocusKey !== newParentFocusKey
-        ) {
+        if (parentNode && oldParentFocusKey && newParentFocusKey && oldParentFocusKey !== newParentFocusKey) {
           this.callParentEventCallback({
             parentFocusKey: newParentFocusKey,
             event: 'parentFocused',
@@ -391,11 +359,7 @@ export class SpacialNavigation {
           event: 'childBlurred',
           node: node.getElement(),
         });
-        if (
-          oldParentFocusKey &&
-          newParentFocusKey &&
-          oldParentFocusKey !== newParentFocusKey
-        ) {
+        if (oldParentFocusKey && newParentFocusKey && oldParentFocusKey !== newParentFocusKey) {
           this.callParentEventCallback({
             parentFocusKey: oldParentFocusKey,
             event: 'parentBlurred',
@@ -418,7 +382,7 @@ export class SpacialNavigation {
         parentFocusKey,
         focusKey,
       }),
-      action
+      action,
     );
   }
 
@@ -498,11 +462,7 @@ export class SpacialNavigation {
     // We need an item to move down from
     if (!this.currentlyFocusedNode) {
       if (this.focusableNodes.length > 0) {
-        this.log(
-          'moveFocus',
-          logString,
-          'no currently focused item, going to first item'
-        );
+        this.log('moveFocus', logString, 'no currently focused item, going to first item');
         this.focusFirstItem();
       } else {
         this.log('moveFocus', logString, 'no focusable nodes, doing nothing');
@@ -514,17 +474,14 @@ export class SpacialNavigation {
 
     nextNodeToFocus = this.currentlyFocusedNode.getNeighborNode(direction);
 
-    if (
-      nextNodeToFocus &&
-      nextNodeToFocus.getFocusKey() === this.currentlyFocusedNode.getFocusKey()
-    ) {
+    if (nextNodeToFocus && nextNodeToFocus.getFocusKey() === this.currentlyFocusedNode.getFocusKey()) {
       this.log(
         'moveFocus',
         logString,
         `${this.getFkLogString({
           parentFocusKey: nextNodeToFocus.getParentFocusKey(),
           focusKey: nextNodeToFocus.getFocusKey(),
-        })} already focused`
+        })} already focused`,
       );
       return;
     }
@@ -539,7 +496,7 @@ export class SpacialNavigation {
         })} --> ${this.getFkLogString({
           parentFocusKey: nextNodeToFocus.getParentFocusKey(),
           focusKey: nextNodeToFocus.getFocusKey(),
-        })}`
+        })}`,
       );
 
       const focusKey = nextNodeToFocus.getFocusKey();
@@ -559,7 +516,7 @@ export class SpacialNavigation {
               parentFocusKey: this.currentlyFocusedNode.getParentFocusKey(),
               focusKey: this.currentlyFocusedNode.getFocusKey(),
             }),
-            ` no neighbor for direction ${direction} in first attempt, but found after update neighbors`
+            ` no neighbor for direction ${direction} in first attempt, but found after update neighbors`,
           );
           this.moveFocus(direction, attempt + 1);
           return;
@@ -574,8 +531,7 @@ export class SpacialNavigation {
       ) {
         // Find first focusable node that's not the current one
         const alternativeNode = this.focusableNodes.find(
-          (node) =>
-            node.getFocusKey() !== this.currentlyFocusedNode?.getFocusKey()
+          (node) => node.getFocusKey() !== this.currentlyFocusedNode?.getFocusKey(),
         );
 
         if (alternativeNode) {
@@ -618,11 +574,12 @@ export class SpacialNavigation {
     // First we find the closest node in the same parent
     const nodesInSameParent = this.focusableNodes.filter(
       (node) =>
+        node.isFocusable() &&
         node.getParentFocusKey() === parentFocusKey &&
-        node.getFocusKey() !== focusedNode.getFocusKey()
+        node.getFocusKey() !== focusedNode.getFocusKey(),
     );
 
-    this.setNeighbors({
+    setNeighbors({
       fromNode: focusedNode,
       neighborNodes: nodesInSameParent,
       canMoveTop,
@@ -642,21 +599,16 @@ export class SpacialNavigation {
         }),
         `Cannot focus outside parent`,
         focusedNode,
-        nodesInSameParent
+        nodesInSameParent,
       );
     } else {
       // Now for directions without node, check other neighbors that are outside the parent
       nodesOutsideParent = this.focusableNodes.filter(
         (node) =>
+          node.isFocusable() &&
           node.getParentFocusKey() !== parentFocusKey &&
-          node.getFocusKey() !== focusedNode.getFocusKey() &&
-          isNodeFocusable(node.getElement())
+          node.getFocusKey() !== focusedNode.getFocusKey(),
       );
-
-      // // Includes parent nodes
-      // nodesOutsideParent.push(
-      //   ...this.focusableNodes.filter((node) => isNodeIsParent(node.getElement()))
-      // );
 
       // We can go to all directions if we don't have a neighbor in that direction already
       canMoveTop = focusedNode.getNeighborNode('top') === null;
@@ -664,7 +616,7 @@ export class SpacialNavigation {
       canMoveLeft = focusedNode.getNeighborNode('left') === null;
       canMoveRight = focusedNode.getNeighborNode('right') === null;
 
-      this.setNeighbors({
+      setNeighbors({
         fromNode: focusedNode,
         neighborNodes: nodesOutsideParent,
         canMoveTop,
@@ -674,8 +626,10 @@ export class SpacialNavigation {
         nodesAreInSameParent: false,
       });
 
+      if (focusedNode.getFocusKey() === 'home-movie-1') {
+        //debugger;
+      }
       // For all neighbors outside the parent, check if there's a last focused node for that parent
-
       const positions: NeighborPosition[] = ['top', 'bottom', 'left', 'right'];
       for (const position of positions) {
         const neighbor = focusedNode.getNeighborNode(position);
@@ -687,11 +641,13 @@ export class SpacialNavigation {
           }
           const focusFirstChild = isNodeFocusFirstChild(neighborParentNode);
 
-          const lastFocusedInParent = this.lastFocusNodeByParentFocusKey.get(
-            neighbor.getParentFocusKey() ?? ''
-          );
+          const lastFocusedInParent = this.lastFocusNodeByParentFocusKey.get(neighbor.getParentFocusKey() ?? '');
+
+          let neighborSet = false;
+
           if (
             lastFocusedInParent &&
+            lastFocusedInParent.isFocusable() &&
             lastFocusedInParent.getFocusKey() !== neighbor.getFocusKey()
           ) {
             this.log(
@@ -702,23 +658,23 @@ export class SpacialNavigation {
               }),
               `Change neighbor for direction ${position}`,
               `Previous neighbor: fk:${neighbor.getFocusKey()}`,
-              `New neighbor: fk:${lastFocusedInParent.getFocusKey()}`
+              `New neighbor: fk:${lastFocusedInParent.getFocusKey()}`,
             );
             focusedNode.setNeighborNode(lastFocusedInParent, position);
+            neighborSet = true;
           }
-          if (!lastFocusedInParent && focusFirstChild) {
+
+          if (!neighborSet && focusFirstChild) {
             // Get the first child of the parent
             const neighborParentFocusKey = neighbor.getParentFocusKey();
             if (!neighborParentFocusKey) {
               continue;
             }
-            const children = this.getFocusableNodesByParentFocusKey(
-              neighborParentFocusKey
-            );
+            const children = this.getFocusableNodesByParentFocusKey(neighborParentFocusKey);
             if (children.length > 0) {
               const firstChildFocusableNode = children[0];
 
-              if (firstChildFocusableNode) {
+              if (firstChildFocusableNode.isFocusable()) {
                 focusedNode.setNeighborNode(firstChildFocusableNode, position);
               }
             }
@@ -726,6 +682,25 @@ export class SpacialNavigation {
         }
       }
     }
+    if (focusedNode.getFocusKey() === 'home-movie-1') {
+      //debugger;
+    }
+    const upLogString = `${this.getFkLogString({
+      parentFocusKey: focusedNode.getNeighborNode('top')?.getParentFocusKey(),
+      focusKey: focusedNode.getNeighborNode('top')?.getFocusKey(),
+    })}`;
+    const downLogString = `${this.getFkLogString({
+      parentFocusKey: focusedNode.getNeighborNode('bottom')?.getParentFocusKey(),
+      focusKey: focusedNode.getNeighborNode('bottom')?.getFocusKey(),
+    })}`;
+    const leftLogString = `${this.getFkLogString({
+      parentFocusKey: focusedNode.getNeighborNode('left')?.getParentFocusKey(),
+      focusKey: focusedNode.getNeighborNode('left')?.getFocusKey(),
+    })}`;
+    const rightLogString = `${this.getFkLogString({
+      parentFocusKey: focusedNode.getNeighborNode('right')?.getParentFocusKey(),
+      focusKey: focusedNode.getNeighborNode('right')?.getFocusKey(),
+    })}`;
 
     this.log(
       'updateNeighbors',
@@ -737,249 +712,14 @@ export class SpacialNavigation {
       `
 Node in same parent: ${nodesInSameParent.length}
 Node outside parent: ${nodesOutsideParent.length}
-up --> ${focusedNode.getNeighborNode('top')?.getFocusKey()}
-down --> ${focusedNode.getNeighborNode('bottom')?.getFocusKey()}
-left --> ${focusedNode.getNeighborNode('left')?.getFocusKey()}
-right --> ${focusedNode.getNeighborNode('right')?.getFocusKey()}`,
-      focusedNode
+up --> ${upLogString}
+down --> ${downLogString}
+left --> ${leftLogString}
+right --> ${rightLogString}`,
+      focusedNode,
     );
 
     this.visualDebugger?.updateDisplay();
-  }
-
-  private setNeighbors({
-    fromNode,
-    neighborNodes,
-    canMoveTop,
-    canMoveBottom,
-    canMoveLeft,
-    canMoveRight,
-    nodesAreInSameParent = false,
-  }: {
-    fromNode: FocusableNode;
-    neighborNodes: FocusableNode[];
-    canMoveTop: boolean;
-    canMoveBottom: boolean;
-    canMoveLeft: boolean;
-    canMoveRight: boolean;
-    nodesAreInSameParent?: boolean;
-  }) {
-    const fromMetrics = fromNode.getMetrics();
-    const fromParentNode = fromNode.getParentNode();
-    if (!fromParentNode) {
-      return;
-    }
-
-    const nodeWithMetrics: {
-      node: FocusableNode;
-      metrics: Metrics;
-    }[] = [];
-
-    for (const newNode of neighborNodes) {
-      nodeWithMetrics.push({
-        node: newNode,
-        metrics: newNode.getMetrics(),
-      });
-    }
-
-    const candidateNodeByDirection: Record<
-      NeighborPosition,
-      {
-        node: FocusableNode;
-        metrics: Metrics;
-      }[]
-    > = {
-      top: [],
-      bottom: [],
-      left: [],
-      right: [],
-    };
-
-    if (nodesAreInSameParent) {
-      // For top/bottom directions, first find nodes with minimum Y distance
-      const topNodes = nodeWithMetrics.filter(
-        ({ metrics }) => metrics.center.y < fromMetrics.center.y
-      );
-      const bottomNodes = nodeWithMetrics.filter(
-        ({ metrics }) => metrics.center.y > fromMetrics.center.y
-      );
-
-      let minTopY = Infinity;
-      let minBottomY = Infinity;
-
-      // Find minimum Y distances
-      for (const { metrics } of topNodes) {
-        const yDist = fromMetrics.center.y - metrics.center.y;
-        minTopY = Math.min(minTopY, yDist);
-      }
-
-      for (const { metrics } of bottomNodes) {
-        const yDist = metrics.center.y - fromMetrics.center.y;
-        minBottomY = Math.min(minBottomY, yDist);
-      }
-
-      // Filter to only include nodes at minimum Y distance
-      candidateNodeByDirection.top = topNodes.filter(
-        ({ metrics }) =>
-          Math.abs(fromMetrics.center.y - metrics.center.y - minTopY) < 1
-      );
-
-      candidateNodeByDirection.bottom = bottomNodes.filter(
-        ({ metrics }) =>
-          Math.abs(metrics.center.y - fromMetrics.center.y - minBottomY) < 1
-      );
-
-      candidateNodeByDirection.left = nodeWithMetrics;
-      candidateNodeByDirection.right = nodeWithMetrics;
-    } else {
-      const fromParentMetrics = getElementMetrics(fromParentNode);
-
-      // Get parent nodes metrics
-      const parentNodes = new Map<
-        string,
-        { parentNode: HTMLElement; parentMetrics: Metrics }
-      >();
-      for (const { node } of nodeWithMetrics) {
-        const parentFocusKey = node.getParentFocusKey();
-        if (!parentFocusKey || parentNodes.has(parentFocusKey)) continue;
-
-        const parentElement = node.getParentNode();
-        if (!parentElement) {
-          continue;
-        }
-        const parentMetrics = getElementMetrics(parentElement);
-
-        parentNodes.set(parentFocusKey, {
-          parentNode: parentElement,
-          parentMetrics,
-        });
-      }
-
-      // Filter nodes based on parent position relative to current node
-      for (const [parentFocusKey, { parentMetrics }] of parentNodes) {
-        const isParentAbove = parentMetrics.bottom <= fromParentMetrics.top;
-        const isParentBelow = parentMetrics.top >= fromParentMetrics.bottom;
-        const isParentLeft = parentMetrics.right <= fromParentMetrics.left;
-        const isParentRight = parentMetrics.left >= fromParentMetrics.right;
-
-        const nodesWithMetricsInParent = nodeWithMetrics.filter(
-          ({ node }) => node.getParentFocusKey() === parentFocusKey
-        );
-        if (isParentAbove) {
-          candidateNodeByDirection.top.push(...nodesWithMetricsInParent);
-        }
-        if (isParentBelow) {
-          candidateNodeByDirection.bottom.push(...nodesWithMetricsInParent);
-        }
-        if (isParentLeft) {
-          candidateNodeByDirection.left.push(...nodesWithMetricsInParent);
-        }
-        if (isParentRight) {
-          candidateNodeByDirection.right.push(...nodesWithMetricsInParent);
-        }
-      }
-    }
-
-    const directions: NeighborPosition[] = ['top', 'bottom', 'left', 'right'];
-
-    for (const direction of directions) {
-      let minElementDist: number | undefined;
-
-      if (direction === 'top' && !canMoveTop) continue;
-      if (direction === 'bottom' && !canMoveBottom) continue;
-      if (direction === 'left' && !canMoveLeft) continue;
-      if (direction === 'right' && !canMoveRight) continue;
-
-      for (const {
-        node: newItem,
-        metrics: newMetrics,
-      } of candidateNodeByDirection[direction]) {
-        // Calculate distances in each direction
-        let distance: number | null = null;
-        switch (direction) {
-          case 'top':
-            distance = getTopDistance({
-              fromMetrics: fromMetrics,
-              toMetrics: newMetrics,
-            });
-            break;
-          case 'bottom':
-            distance = getBottomDistance({
-              fromMetrics: fromMetrics,
-              toMetrics: newMetrics,
-            });
-            break;
-          case 'left':
-            distance = getLeftDistance({
-              fromMetrics: fromMetrics,
-              toMetrics: newMetrics,
-              preferCloserY: true,
-            });
-            break;
-          case 'right':
-            distance = getRightDistance({
-              fromMetrics: fromMetrics,
-              toMetrics: newMetrics,
-              preferCloserY: true,
-            });
-            break;
-        }
-
-        // Update neighbors if this is the closest node in each direction
-        if (
-          distance !== null &&
-          (minElementDist === undefined || minElementDist > distance)
-        ) {
-          minElementDist = distance;
-          fromNode.setNeighborNode(newItem, direction);
-        }
-      }
-
-      if (fromNode.getFocusKey() === 'sn-fk-0') {
-        // debugger;
-      }
-
-      // If we are in the same parent or we have a min distance, we don't need to check other nodes in this direction
-      if (
-        nodesAreInSameParent ||
-        minElementDist !== undefined ||
-        direction === 'top' ||
-        direction === 'bottom'
-      ) {
-        continue;
-      }
-
-      for (const {
-        node: newItem,
-        metrics: newMetrics,
-      } of candidateNodeByDirection[direction]) {
-        // Calculate distances in each direction
-        let distance: number | null = null;
-        switch (direction) {
-          case 'left':
-            distance = getLeftDistance({
-              fromMetrics: fromMetrics,
-              toMetrics: newMetrics,
-              preferCloserY: false,
-            });
-            break;
-          case 'right':
-            distance = getRightDistance({
-              fromMetrics: fromMetrics,
-              toMetrics: newMetrics,
-              preferCloserY: false,
-            });
-            break;
-        }
-        if (
-          distance !== null &&
-          (minElementDist === undefined || minElementDist > distance)
-        ) {
-          minElementDist = distance;
-          fromNode.setNeighborNode(newItem, direction);
-        }
-      }
-    }
   }
 
   disable() {
@@ -1030,10 +770,7 @@ right --> ${focusedNode.getNeighborNode('right')?.getFocusKey()}`,
         break;
       case 'Enter':
       case ' ':
-        if (
-          event.target instanceof HTMLInputElement ||
-          event.target instanceof HTMLTextAreaElement
-        ) {
+        if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
           break;
         }
         event.preventDefault();
@@ -1060,22 +797,14 @@ right --> ${focusedNode.getNeighborNode('right')?.getFocusKey()}`,
     if (this.debug) {
       console.log(
         `%cSN:${functionName}%c${debugString}`,
-        `background: ${
-          DEBUG_FN_COLORS[this.logIndex++ % DEBUG_FN_COLORS.length]
-        }; color: black; padding: 1px 5px;`,
+        `background: ${DEBUG_FN_COLORS[this.logIndex++ % DEBUG_FN_COLORS.length]}; color: black; padding: 1px 5px;`,
         'background: #333; color: #BADA55; padding: 1px 5px;',
-        ...rest
+        ...rest,
       );
     }
   }
 
-  private getFkLogString({
-    parentFocusKey,
-    focusKey,
-  }: {
-    parentFocusKey?: string;
-    focusKey?: string;
-  }) {
+  private getFkLogString({ parentFocusKey, focusKey }: { parentFocusKey?: string; focusKey?: string }) {
     return `pfk:${parentFocusKey}/fk:${focusKey}`;
   }
 }

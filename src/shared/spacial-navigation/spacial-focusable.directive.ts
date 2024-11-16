@@ -1,24 +1,15 @@
-import {
-  AfterViewInit,
-  Directive,
-  ElementRef,
-  EventEmitter,
-  Input,
-  OnDestroy,
-  Output,
-  inject,
-} from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, EventEmitter, Input, OnDestroy, Output, inject } from '@angular/core';
 import { SpacialNavigationService } from './spacial-navigation.service';
 
 import { FocusableNode } from './lib/focusable-node';
+import { FOCUSABLE_ROOT_PARENT } from './lib/spacial-node';
 
 @Directive({
   selector: '[wkSnFocusable]',
   standalone: true,
 })
 export class SpacialFocusableDirective implements AfterViewInit, OnDestroy {
-  //* If true, the element will be focused when the page is entered
-  @Input({ required: true }) snParentFocusKey!: string;
+  @Input() snParentFocusKey: string = FOCUSABLE_ROOT_PARENT;
   @Input() snFocusKey?: string;
   @Input() snPreventScrollOnFocus = false;
 
@@ -31,29 +22,27 @@ export class SpacialFocusableDirective implements AfterViewInit, OnDestroy {
   private focusableNode: FocusableNode | null = null;
 
   ngAfterViewInit() {
+    this.element.nativeElement.setAttribute('wkSnFocusableByDirective', '');
     // Parent are added to the DOM after children
-    setTimeout(() => {
-      this.focusableNode =
-        this.spacialNavigationService.spacialNavigation.registerNode({
-          node: this.element.nativeElement,
-          origin: 'wkSnFocusable',
-          focusKey: this.snFocusKey,
-          parentFocusKey: this.snParentFocusKey,
-          preventScrollOnFocus: this.snPreventScrollOnFocus,
-        });
+    this.focusableNode = this.spacialNavigationService.spacialNavigation.registerNode({
+      node: this.element.nativeElement,
+      origin: 'wkSnFocusable',
+      focusKey: this.snFocusKey,
+      parentFocusKey: this.snParentFocusKey,
+      preventScrollOnFocus: this.snPreventScrollOnFocus,
+    });
 
-      if (this.focusableNode) {
-        this.focusableNode.onClick(() => {
-          this.snClick.emit(this.element);
-        });
-        this.focusableNode.onBlur(() => {
-          this.snBlur.emit(this.element);
-        });
-        this.focusableNode.onFocus(() => {
-          this.snFocus.emit(this.element);
-        });
-      }
-    }, 200);
+    if (this.focusableNode) {
+      this.focusableNode.onClick(() => {
+        this.snClick.emit(this.element);
+      });
+      this.focusableNode.onBlur(() => {
+        this.snBlur.emit(this.element);
+      });
+      this.focusableNode.onFocus(() => {
+        this.snFocus.emit(this.element);
+      });
+    }
   }
 
   ngOnDestroy() {

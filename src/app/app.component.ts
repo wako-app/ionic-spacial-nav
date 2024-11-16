@@ -1,39 +1,39 @@
-import { AfterViewInit, Component, inject, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import {
   IonApp,
-  IonSplitPane,
-  IonMenu,
   IonContent,
+  IonIcon,
+  IonItem,
+  IonLabel,
   IonList,
   IonListHeader,
-  IonNote,
+  IonMenu,
   IonMenuToggle,
-  IonItem,
-  IonIcon,
-  IonLabel,
-  IonRouterOutlet,
+  IonNote,
   IonRouterLink,
+  IonRouterOutlet,
+  IonSplitPane,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
+  archiveOutline,
+  archiveSharp,
+  bookmarkOutline,
+  bookmarkSharp,
+  heartOutline,
+  heartSharp,
   homeOutline,
   mailOutline,
   mailSharp,
   paperPlaneOutline,
   paperPlaneSharp,
-  heartOutline,
-  heartSharp,
-  archiveOutline,
-  archiveSharp,
   trashOutline,
   trashSharp,
+  tvOutline,
   warningOutline,
   warningSharp,
-  bookmarkOutline,
-  bookmarkSharp,
-  tvOutline,
 } from 'ionicons/icons';
 
 import { SpacialFocusableDirective } from 'src/shared/spacial-navigation/spacial-focusable.directive';
@@ -67,9 +67,10 @@ import { SpacialParentFocusableDirective } from 'src/shared/spacial-navigation/s
 })
 export class AppComponent {
   public appPages = [
-    { title: 'Movies', url: '/', icon: 'tv' },
-    { title: 'Buttons', url: '/buttons', icon: 'mail' },
-    { title: 'Overlays', url: '/overlays', icon: 'paper-plane' },
+    { title: 'Home', url: '/tabs/home', icon: 'home', focusKey: 'menu_home' },
+    { title: 'Movies', url: '/tabs/movies', icon: 'tv', focusKey: 'menu_movies' },
+    { title: 'Buttons', url: '/tabs/buttons', icon: 'mail', focusKey: 'menu_buttons' },
+    { title: 'Overlays', url: '/tabs/overlays', icon: 'paper-plane', focusKey: 'menu_overlays' },
     // { title: 'Favorites', url: '/folder/favorites', icon: 'heart' },
     // { title: 'Archived', url: '/folder/archived', icon: 'archive' },
     // { title: 'Trash', url: '/folder/trash', icon: 'trash' },
@@ -81,6 +82,7 @@ export class AppComponent {
 
   constructor() {
     addIcons({
+      homeOutline,
       tvOutline,
       mailOutline,
       mailSharp,
