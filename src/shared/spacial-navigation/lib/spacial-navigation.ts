@@ -59,9 +59,9 @@ export class SpacialNavigation {
       document.body.classList.add('sn-debug');
       this.visualDebugger = new VisualDebugger(this);
 
-      setTimeout(() => {
-        this.focusByFocusKey('homeTrending');
-      }, 500);
+      // setTimeout(() => {
+      //   this.focusByFocusKey('homeTrending');
+      // }, 500);
     }
 
     this.log('initialize', `debug: ${debug} - visualDebug: ${visualDebug}`);
@@ -645,11 +645,7 @@ export class SpacialNavigation {
 
           let neighborSet = false;
 
-          if (
-            lastFocusedInParent &&
-            lastFocusedInParent.isFocusable() &&
-            lastFocusedInParent.getFocusKey() !== neighbor.getFocusKey()
-          ) {
+          if (lastFocusedInParent && lastFocusedInParent.isFocusable()) {
             this.log(
               'updateNeighbors',
               this.getFkLogString({

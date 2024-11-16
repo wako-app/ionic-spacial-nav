@@ -21,6 +21,10 @@ const routes: Routes = [
         path: 'overlays',
         loadComponent: () => import('./overlays.page'),
       },
+      {
+        path: 'lists',
+        loadComponent: () => import('./lists.page'),
+      },
     ],
   },
 

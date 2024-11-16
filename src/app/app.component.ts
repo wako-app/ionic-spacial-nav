@@ -71,7 +71,7 @@ export class AppComponent {
     { title: 'Movies', url: '/tabs/movies', icon: 'tv', focusKey: 'menu_movies' },
     { title: 'Buttons', url: '/tabs/buttons', icon: 'mail', focusKey: 'menu_buttons' },
     { title: 'Overlays', url: '/tabs/overlays', icon: 'paper-plane', focusKey: 'menu_overlays' },
-    // { title: 'Favorites', url: '/folder/favorites', icon: 'heart' },
+    { title: 'Lists', url: '/tabs/lists', icon: 'heart', focusKey: 'menu_lists' },
     // { title: 'Archived', url: '/folder/archived', icon: 'archive' },
     // { title: 'Trash', url: '/folder/trash', icon: 'trash' },
     // { title: 'Spam', url: '/folder/spam', icon: 'warning' },

@@ -257,33 +257,35 @@ export function setNeighbors({
   };
 
   if (nodesAreInSameParent) {
-    // For top/bottom directions, first find nodes with minimum Y distance
-    const topNodes = nodeWithMetrics.filter(({ metrics }) => metrics.center.y < fromMetrics.center.y);
-    const bottomNodes = nodeWithMetrics.filter(({ metrics }) => metrics.center.y > fromMetrics.center.y);
+    // // For top/bottom directions, first find nodes with minimum Y distance
+    // const topNodes = nodeWithMetrics.filter(({ metrics }) => metrics.center.y < fromMetrics.center.y);
+    // const bottomNodes = nodeWithMetrics.filter(({ metrics }) => metrics.center.y > fromMetrics.center.y);
 
-    let minTopY = Infinity;
-    let minBottomY = Infinity;
+    // let minTopY = Infinity;
+    // let minBottomY = Infinity;
 
-    // Find minimum Y distances
-    for (const { metrics } of topNodes) {
-      const yDist = fromMetrics.center.y - metrics.center.y;
-      minTopY = Math.min(minTopY, yDist);
-    }
+    // // Find minimum Y distances
+    // for (const { metrics } of topNodes) {
+    //   const yDist = fromMetrics.center.y - metrics.center.y;
+    //   minTopY = Math.min(minTopY, yDist);
+    // }
 
-    for (const { metrics } of bottomNodes) {
-      const yDist = metrics.center.y - fromMetrics.center.y;
-      minBottomY = Math.min(minBottomY, yDist);
-    }
+    // for (const { metrics } of bottomNodes) {
+    //   const yDist = metrics.center.y - fromMetrics.center.y;
+    //   minBottomY = Math.min(minBottomY, yDist);
+    // }
 
-    // Filter to only include nodes at minimum Y distance
-    candidateNodeByDirection.top = topNodes.filter(
-      ({ metrics }) => Math.abs(fromMetrics.center.y - metrics.center.y - minTopY) < 1,
-    );
+    // // Filter to only include nodes at minimum Y distance
+    // candidateNodeByDirection.top = topNodes.filter(
+    //   ({ metrics }) => Math.abs(fromMetrics.center.y - metrics.center.y - minTopY) < 1,
+    // );
 
-    candidateNodeByDirection.bottom = bottomNodes.filter(
-      ({ metrics }) => Math.abs(metrics.center.y - fromMetrics.center.y - minBottomY) < 1,
-    );
+    // candidateNodeByDirection.bottom = bottomNodes.filter(
+    //   ({ metrics }) => Math.abs(metrics.center.y - fromMetrics.center.y - minBottomY) < 1,
+    // );
 
+    candidateNodeByDirection.top = nodeWithMetrics;
+    candidateNodeByDirection.bottom = nodeWithMetrics;
     candidateNodeByDirection.left = nodeWithMetrics;
     candidateNodeByDirection.right = nodeWithMetrics;
   } else {
