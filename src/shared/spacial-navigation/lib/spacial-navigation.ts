@@ -16,6 +16,7 @@ import {
   setNodeIsParent,
   setNodeOrientation,
   setNodeParentFocusKey,
+  setNodePreventScrollOnChildFocus,
 } from './spacial-node';
 import { VisualDebugger } from './visual-debugger';
 
@@ -131,6 +132,7 @@ export class SpacialNavigation {
     saveLastFocusedChild = false, // only used for parent nodes
     constraintToParent = false,
     focusFirstChild = false,
+    preventScrollOnChildFocus = false,
   }: {
     node: HTMLElement;
     focusKey?: string;
@@ -138,6 +140,7 @@ export class SpacialNavigation {
     orientation?: FocusableOrientation;
     constraintToParent?: boolean;
     focusFirstChild?: boolean;
+    preventScrollOnChildFocus?: boolean;
   }) {
     const originText = origin ? ` - origin: ${origin}` : '';
 
@@ -164,6 +167,10 @@ export class SpacialNavigation {
 
     if (focusFirstChild) {
       setNodeFocusFirstChild(node);
+    }
+
+    if (preventScrollOnChildFocus) {
+      setNodePreventScrollOnChildFocus(node);
     }
 
     this.log('registerParentNode', `registerParentNode pfk:${focusKeyAttribute}${originText}`);

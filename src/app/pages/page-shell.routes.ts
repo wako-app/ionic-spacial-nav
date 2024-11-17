@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-const routes: Routes = [
+export const routes: Routes = [
   {
     path: 'tabs',
     loadComponent: () => import('./page-shell.component'),
@@ -11,7 +11,7 @@ const routes: Routes = [
       },
       {
         path: 'movies',
-        loadComponent: () => import('./movies.page'),
+        loadChildren: () => import('./movies/movies.routes'),
       },
       {
         path: 'buttons',

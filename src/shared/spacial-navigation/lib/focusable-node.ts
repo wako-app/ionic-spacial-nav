@@ -6,6 +6,7 @@ import {
   getNodeOrientation,
   getNodeParentFocusKey,
   getNodeStatus,
+  isNodePreventScrollOnChildFocus,
   setFocusableStatus,
 } from './spacial-node';
 
@@ -114,7 +115,12 @@ export class FocusableNode {
   }
 
   focus() {
-    this.element.focus({ preventScroll: this.preventScrollOnFocus === true });
+    let preventScroll = this.preventScrollOnFocus === true;
+    const parentNode = this.getParentNode();
+    if (parentNode && isNodePreventScrollOnChildFocus(parentNode)) {
+      preventScroll = true;
+    }
+    this.element.focus({ preventScroll });
   }
 
   blur() {

@@ -1,10 +1,4 @@
-import {
-  AfterViewInit,
-  Directive,
-  ElementRef,
-  Input,
-  inject,
-} from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, Input, inject } from '@angular/core';
 import { SpacialNavigationService } from './spacial-navigation.service';
 
 import { FocusableOrientation } from './lib/spacial-node';
@@ -16,7 +10,7 @@ import { FocusableOrientation } from './lib/spacial-node';
 export class SpacialParentFocusableDirective implements AfterViewInit {
   @Input({ required: true }) snFocusKey!: string;
   @Input() snOrientation?: FocusableOrientation;
-  @Input() snPreventScrollOnFocus = false;
+  @Input() snPreventScrollOnChildFocus = false;
   @Input() snFocusFirstChild = false;
 
   private spacialNavigationService = inject(SpacialNavigationService);
@@ -29,6 +23,7 @@ export class SpacialParentFocusableDirective implements AfterViewInit {
       orientation: this.snOrientation,
       saveLastFocusedChild: true,
       focusFirstChild: this.snFocusFirstChild,
+      preventScrollOnChildFocus: this.snPreventScrollOnChildFocus,
     });
   }
 }

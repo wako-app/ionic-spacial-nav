@@ -31,7 +31,6 @@ import { SpacialParentFocusableDirective } from 'src/shared/spacial-navigation/s
             <wk-movie-item
               wkSnFocusable
               snParentFocusKey="moviesTrending"
-              [snPreventScrollOnFocus]="true"
               [snFocusKey]="'movie-trending-' + movie.index"
               [index]="movie.index"
               [title]="movie.title"
@@ -43,7 +42,6 @@ import { SpacialParentFocusableDirective } from 'src/shared/spacial-navigation/s
             <wk-movie-item
               wkSnFocusable
               snParentFocusKey="moviesPopular"
-              [snPreventScrollOnFocus]="true"
               [snFocusKey]="'movie-popular-' + movie.index"
               [index]="movie.index"
               [title]="movie.title"
@@ -55,7 +53,6 @@ import { SpacialParentFocusableDirective } from 'src/shared/spacial-navigation/s
             <wk-movie-item
               wkSnFocusable
               snParentFocusKey="moviesUpcoming"
-              [snPreventScrollOnFocus]="true"
               [snFocusKey]="'movie-upcoming-' + movie.index"
               [index]="movie.index"
               [title]="movie.title"

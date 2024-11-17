@@ -9,6 +9,7 @@ export const FOCUSABLE_ITEM_ATTRIBUTE_ORIENTATION = 'sn-orientation';
 export const FOCUSABLE_ITEM_ATTRIBUTE_CONSTRAINT_TO_PARENT = 'sn-constraint-to-parent';
 export const FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_FIRST_CHILD = 'sn-focus-first-child';
 export const FOCUSABLE_ITEM_ATTRIBUTE_FOCUSABLE = 'sn-focusable';
+export const FOCUSABLE_ITEM_ATTRIBUTE_PREVENT_SCROLL_ON_CHILD_FOCUS = 'sn-prevent-scroll-on-child-focus';
 
 const allSnAttributes = [
   FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_KEY,
@@ -19,6 +20,7 @@ const allSnAttributes = [
   FOCUSABLE_ITEM_ATTRIBUTE_ORIENTATION,
   FOCUSABLE_ITEM_ATTRIBUTE_CONSTRAINT_TO_PARENT,
   FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_FIRST_CHILD,
+  FOCUSABLE_ITEM_ATTRIBUTE_PREVENT_SCROLL_ON_CHILD_FOCUS,
 ];
 
 export type FocusableStatus = 'pending' | 'active' | 'disabled';
@@ -124,4 +126,12 @@ export function isNodeFocusFirstChild(node: HTMLElement) {
 
 export function isMyChildByFocusKey({ parentNode, focusKey }: { parentNode: HTMLElement; focusKey: string }) {
   return parentNode.querySelector(`[${FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_KEY}="${focusKey}"]`) !== null;
+}
+
+export function setNodePreventScrollOnChildFocus(node: HTMLElement) {
+  node.setAttribute(FOCUSABLE_ITEM_ATTRIBUTE_PREVENT_SCROLL_ON_CHILD_FOCUS, 'true');
+}
+
+export function isNodePreventScrollOnChildFocus(node: HTMLElement) {
+  return node.getAttribute(FOCUSABLE_ITEM_ATTRIBUTE_PREVENT_SCROLL_ON_CHILD_FOCUS) === 'true';
 }

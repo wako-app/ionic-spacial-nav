@@ -14,6 +14,7 @@ import { SpacialParentFocusableDirective } from './spacial-parent-focusable.dire
       [snFocusKey]="parentFocusKey"
       snOrientation="horizontal"
       [snFocusFirstChild]="true"
+      [snPreventScrollOnChildFocus]="true"
       [ngClass]="{ 'bg-orange-400/50': isFocused }"
     >
       @if (title) {
