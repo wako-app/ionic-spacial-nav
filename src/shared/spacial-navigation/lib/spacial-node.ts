@@ -98,6 +98,10 @@ export function setNodeFocused(node: HTMLElement, focused: boolean) {
   node.setAttribute(FOCUSABLE_ITEM_ATTRIBUTE_FOCUSED, focused ? 'true' : 'false');
 }
 
+export function getNodeFocused(parent?: HTMLElement) {
+  return (parent ?? document).querySelector<HTMLElement>(`[${FOCUSABLE_ITEM_ATTRIBUTE_FOCUSED}="true"]`);
+}
+
 export function setFocusableStatus(node: HTMLElement, status: FocusableStatus) {
   node.setAttribute(FOCUSABLE_ITEM_ATTRIBUTE_FOCUSABLE, status);
 }

@@ -12,6 +12,7 @@ export class SpacialFocusableDirective implements AfterViewInit, OnDestroy {
   @Input() snParentFocusKey: string = FOCUSABLE_ROOT_PARENT;
   @Input() snFocusKey?: string;
   @Input() snPreventScrollOnFocus = false;
+  @Input() snFocusMeOnEnter = false;
 
   @Output() snFocus = new EventEmitter<ElementRef>();
   @Output() snClick = new EventEmitter<ElementRef>();
@@ -30,6 +31,7 @@ export class SpacialFocusableDirective implements AfterViewInit, OnDestroy {
       focusKey: this.snFocusKey,
       parentFocusKey: this.snParentFocusKey,
       preventScrollOnFocus: this.snPreventScrollOnFocus,
+      focusNode: this.snFocusMeOnEnter,
     });
 
     if (this.focusableNode) {

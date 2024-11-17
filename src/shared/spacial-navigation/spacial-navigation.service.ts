@@ -83,6 +83,16 @@ export class SpacialNavigationService {
           // Save the focused element of the current route
           const currentFocusKey = this.spacialNavigation.currentlyFocusKey;
           if (currentFocusKey) {
+            const currentFocusNode = getNodeByFocusKey(currentFocusKey);
+            if (!currentFocusNode) {
+              return;
+            }
+            // Check if focus node is in an .ion-page but not ion-app
+            const ionPage = currentFocusNode.closest('.ion-page');
+            if (!ionPage || ionPage.tagName.toLowerCase() === 'ion-app') {
+              return;
+            }
+
             this.navigationHistory.push({
               focusKey: currentFocusKey,
               route: this.currentRoute,
@@ -236,8 +246,8 @@ export class SpacialNavigationService {
     return null;
   }
 
-  private generateParentFocusKey() {
-    return `sn-service-parent-${this.parentFocusKeyIndex++}`;
+  private generateParentFocusKey(pageTagName?: string) {
+    return `sns-parent-${pageTagName?.toLocaleLowerCase() ?? ''}-${this.parentFocusKeyIndex++}`;
   }
 
   private disableAllActiveNodesInHiddenPage() {
@@ -277,7 +287,10 @@ export class SpacialNavigationService {
     });
   }
 
-  private registerNewFocusableNodes({ rootElement = document.body }: { rootElement?: HTMLElement } = {}) {
+  private registerNewFocusableNodes({
+    rootElement = document.body,
+    isFromNavigation = false,
+  }: { rootElement?: HTMLElement; isFromNavigation?: boolean } = {}) {
     const focusableSelectors = [
       `.ion-focusable:not([${FOCUSABLE_ITEM_ATTRIBUTE_FOCUSABLE}],[wksnfocusable],[wksnparentfocusable])`,
       `input[type="text"]:not([${FOCUSABLE_ITEM_ATTRIBUTE_FOCUSABLE}],[wksnfocusable],[wksnparentfocusable])`,
@@ -286,7 +299,7 @@ export class SpacialNavigationService {
 
     const nodesToRegister: HTMLElement[] = [];
 
-    const classToIgnore = ['menu-button-hidden', 'overlay-hidden'];
+    const classToIgnore = ['menu-button-hidden', 'overlay-hidden', 'show-back-button'];
     rootElement.querySelectorAll<HTMLElement>(focusableSelectors.join(',')).forEach((node) => {
       if (classToIgnore.some((cls) => node.classList.contains(cls))) {
         return;
@@ -321,7 +334,7 @@ export class SpacialNavigationService {
       } else {
         parentFocusKey = this.spacialNavigation.registerParentNode({
           node: rootElement,
-          focusKey: this.generateParentFocusKey(),
+          focusKey: this.generateParentFocusKey(rootElement.tagName),
           saveLastFocusedChild: true,
           constraintToParent: true,
         });
@@ -348,7 +361,7 @@ export class SpacialNavigationService {
         if (!parentFocusKey) {
           parentFocusKey = this.spacialNavigation.registerParentNode({
             node: parentNode,
-            focusKey: this.generateParentFocusKey(),
+            focusKey: this.generateParentFocusKey(parentNode.tagName),
             saveLastFocusedChild: true,
             focusFirstChild: false,
           });
@@ -394,13 +407,60 @@ export class SpacialNavigationService {
       if (firstFocusKey && this.overlayVisible !== null) {
         this.spacialNavigation.focusByFocusKey(firstFocusKey);
       }
+      // if (firstFocusKey && (this.overlayVisible !== null || isFromNavigation)) {
+
+      //   // Check if there is one child focused
+      //   let hasFocusedChild = false;
+      //   let rootElement: HTMLElement | null = this.overlayVisible;
+      //   if (isFromNavigation) {
+      //     rootElement = document.querySelector<HTMLElement>('ion-app .ion-page:not(.ion-page-hidden)');
+      //   }
+      //   if (rootElement) {
+      //     const focusedNode = getNodeFocused(rootElement);
+      //     if (focusedNode) {
+      //       hasFocusedChild = true;
+      //     }
+      //     if (!hasFocusedChild) {
+      //       // Try to find the first focusable node in ion-content of this rootElement
+      //       const firstFocusableNode = rootElement.querySelector<HTMLElement>(
+      //         `ion-content:not([${FOCUSABLE_ITEM_ATTRIBUTE_FOCUSABLE}])`,
+      //       );
+      //       if (firstFocusableNode) {
+      //         let fk = getNodeFocusKey(firstFocusableNode);
+      //         if (fk) {
+      //           firstFocusKey = fk;
+      //           console.log('firstFocusKey', firstFocusKey);
+      //         }
+      //       }
+      //     }
+      //   }
+
+      //   if (!hasFocusedChild) {
+      //     this.spacialNavigation.focusByFocusKey(firstFocusKey);
+      //   }
+      // }
     }
   }
 
-  private async refreshFocusableNodes() {
+  private setParentFocusKeyOnNewPages() {
+    const pages = document.querySelectorAll<HTMLElement>(
+      `ion-app .ion-page:not([${FOCUSABLE_ITEM_ATTRIBUTE_IS_PARENT}])`,
+    );
+    pages.forEach((page) => {
+      this.spacialNavigation.registerParentNode({
+        node: page,
+        focusKey: this.generateParentFocusKey(page.tagName),
+        saveLastFocusedChild: true,
+        focusFirstChild: false,
+      });
+    });
+  }
+
+  private async refreshFocusableNodes({ isFromNavigation = false }: { isFromNavigation?: boolean } = {}) {
     if (!this.initialized) {
       return;
     }
+    this.setParentFocusKeyOnNewPages();
 
     this.disableAllActiveNodesInHiddenPage();
     this.enableAllDisabledNodesInVisiblePage();
@@ -409,6 +469,7 @@ export class SpacialNavigationService {
 
     this.registerNewFocusableNodes({
       rootElement: this.overlayVisible ?? document.body,
+      isFromNavigation,
     });
   }
 
@@ -445,28 +506,12 @@ export class SpacialNavigationService {
     });
   }
 
-  routeChange() {
+  private routeChange() {
     setTimeout(() => {
       this.spacialNavigation.log('routeChange', 'unregister deleted nodes');
       this.spacialNavigation.unregisterDeletedNodes();
       this.spacialNavigation.resetCurrentFocusedNodeNeighbors();
-      this.refreshFocusableNodes();
+      this.refreshFocusableNodes({ isFromNavigation: true });
     }, 100);
-  }
-
-  // Utility methods for managing history
-  clearHistory() {
-    this.overlayHistory = [];
-    this.navigationHistory = [];
-  }
-
-  getLastFocusedKeyFromOverlay(): string | null {
-    const lastEntry = this.overlayHistory[this.overlayHistory.length - 1];
-    return lastEntry?.focusKey || null;
-  }
-
-  getLastFocusedKeyFromNavigation(): string | null {
-    const lastEntry = this.navigationHistory[this.navigationHistory.length - 1];
-    return lastEntry?.focusKey || null;
   }
 }

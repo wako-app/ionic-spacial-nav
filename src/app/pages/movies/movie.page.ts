@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
@@ -13,6 +12,8 @@ import {
   shareSocial,
   shareSocialOutline,
 } from 'ionicons/icons';
+import { SpacialFocusableDirective } from 'src/shared/spacial-navigation/spacial-focusable.directive';
+import { SpacialParentFocusableDirective } from 'src/shared/spacial-navigation/spacial-parent-focusable.directive';
 
 interface Movie {
   id: number;
@@ -27,7 +28,7 @@ interface Movie {
 @Component({
   selector: 'app-movie-page',
   standalone: true,
-  imports: [CommonModule, IonicModule],
+  imports: [IonicModule, SpacialParentFocusableDirective, SpacialFocusableDirective],
   template: `
     <ion-header>
       <ion-toolbar>
@@ -47,7 +48,7 @@ interface Movie {
     }
 
     @if (movie) {
-      <ion-content>
+      <ion-content wkSnParentFocusable [snFocusKey]="'moviepage-' + movie.id">
         <div class="relative">
           <img [src]="movie.imageUrl" [alt]="movie.title" class="w-full h-[300px] object-cover" />
           <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent h-24"></div>
@@ -62,7 +63,14 @@ interface Movie {
           </div>
 
           <div class="flex gap-3 mb-6">
-            <ion-button expand="block" color="primary">
+            <ion-button
+              wkSnFocusable
+              [snFocusKey]="'moviepage-watchnow-' + movie.id"
+              [snParentFocusKey]="'moviepage-' + movie.id"
+              [snFocusMeOnEnter]="true"
+              expand="block"
+              color="primary"
+            >
               <ion-icon name="play" slot="start"></ion-icon>
               Watch Now
             </ion-button>

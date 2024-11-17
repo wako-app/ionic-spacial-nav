@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { AfterViewInit, Component } from '@angular/core';
 
 import { IonButton, IonContent, IonHeader, IonSpinner, IonTitle, IonToolbar } from '@ionic/angular/standalone';
 import MovieItemComponent from 'src/shared/movie-item.component';
@@ -40,12 +40,13 @@ import { SpacialParentFocusableDirective } from 'src/shared/spacial-navigation/s
         }
 
         <wk-media-scroll-view parentFocusKey="homeTrending" title="Trending">
-          @for (movie of movies; track movie.index) {
+          @for (movie of movies; track movie.index; let i = $index) {
             <wk-movie-item
               wkSnFocusable
               snParentFocusKey="homeTrending"
               [snPreventScrollOnFocus]="true"
               [snFocusKey]="'home-movie-' + movie.index"
+              [snFocusMeOnEnter]="i === 0"
               [index]="movie.index"
               [title]="movie.title"
               (snFocus)="onSpacialFocused(movie)"
@@ -56,7 +57,7 @@ import { SpacialParentFocusableDirective } from 'src/shared/spacial-navigation/s
     </ion-content>
   `,
 })
-export default class HomePage {
+export default class HomePage implements AfterViewInit {
   selectedUpNextToWatch: { title: string; releaseDate: string } | undefined = undefined;
   selectedUpNextToWatchLoading = false;
 
@@ -82,6 +83,13 @@ export default class HomePage {
     { title: 'Movie 19', releaseDate: '2024-01-19', index: 19 },
     { title: 'Movie 20', releaseDate: '2024-01-20', index: 20 },
   ];
+
+  ngAfterViewInit() {
+    setTimeout(() => {
+      // prepend a new movie to the list
+      this.movies.unshift({ title: 'Movie NEW', releaseDate: '2024-01-21', index: 21 });
+    }, 3000);
+  }
 
   onSpacialFocused(movie: { title: string; releaseDate: string; index: number }) {
     this.selectedUpNextToWatch = movie;

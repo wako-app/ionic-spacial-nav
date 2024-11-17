@@ -224,11 +224,14 @@ export class SpacialNavigation {
 
     const fi = this.addFocusableNode({ node, preventScrollOnFocus });
 
-    if (focusNode || !this.currentlyFocusedNode) {
-      this.focusByFocusKey(focusKeyAttribute);
-    } else {
-      this.resetCurrentFocusedNodeNeighbors();
-    }
+    // Delay this to return the focusable node to allow the directive to set the focus
+    setTimeout(() => {
+      if (focusNode || !this.currentlyFocusedNode) {
+        this.focusByFocusKey(focusKeyAttribute);
+      } else {
+        this.resetCurrentFocusedNodeNeighbors();
+      }
+    }, 1);
 
     return fi;
   }
@@ -514,6 +517,7 @@ export class SpacialNavigation {
       }
     } else {
       if (attempt === 0) {
+        this.log('moveFocus', logString, `no neighbor, updating neighbors and trying again`);
         // If no neighbor, update neighbors and if any in the desired direction, focus on it
         this.updateNeighbors(this.currentlyFocusedNode);
         const neighbor = this.currentlyFocusedNode.getNeighborNode(direction);
@@ -531,13 +535,31 @@ export class SpacialNavigation {
           return;
         }
       }
-      // If no neighbors in any direction, try to focus another element
+
+      const parentNode = this.currentlyFocusedNode.getParentNode();
+      if (parentNode) {
+        const isConstraintToParent = isNodeConstraintToParent(parentNode);
+        if (isConstraintToParent) {
+          const parentFocusKey = getNodeFocusKey(parentNode);
+          if (parentFocusKey) {
+            this.log(
+              'moveFocus',
+              logString,
+              `no neighbor found, but node is constraint to parent pfk:${parentFocusKey}, doing nothing`,
+            );
+            return;
+          }
+        }
+      }
+
+      // If no neighbors in any direction and not constraint to parent, try to focus another element
       if (
         !this.currentlyFocusedNode.getNeighborNode('top') &&
         !this.currentlyFocusedNode.getNeighborNode('bottom') &&
         !this.currentlyFocusedNode.getNeighborNode('left') &&
         !this.currentlyFocusedNode.getNeighborNode('right')
       ) {
+        this.log('moveFocus', logString, `no neighbor found, finding alternative node`);
         // Find first focusable node that's not the current one
         const alternativeNode = this.focusableNodes.find(
           (node) => node.getFocusKey() !== this.currentlyFocusedNode?.getFocusKey(),
@@ -662,8 +684,14 @@ export class SpacialNavigation {
                 focusKey: focusedNode.getFocusKey(),
               }),
               `Change neighbor for direction ${position}`,
-              `Previous neighbor: fk:${neighbor.getFocusKey()}`,
-              `New neighbor: fk:${lastFocusedInParent.getFocusKey()}`,
+              `Previous neighbor: ${this.getFkLogString({
+                parentFocusKey: neighbor.getParentFocusKey(),
+                focusKey: neighbor.getFocusKey(),
+              })}`,
+              `New neighbor: ${this.getFkLogString({
+                parentFocusKey: lastFocusedInParent.getParentFocusKey(),
+                focusKey: lastFocusedInParent.getFocusKey(),
+              })}`,
             );
             focusedNode.setNeighborNode(lastFocusedInParent, position);
             neighborSet = true;
