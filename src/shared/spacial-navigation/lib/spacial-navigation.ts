@@ -7,6 +7,7 @@ import {
   isNodeConstraintToParent,
   isNodeFocusFirstChild,
   isNodeFocusable,
+  isNodeIsParent,
   removeAllSnAttributes,
   setFocusableStatus,
   setNodeConstraintToParent,
@@ -144,14 +145,15 @@ export class SpacialNavigation {
   }) {
     const originText = origin ? ` - origin: ${origin}` : '';
 
-    const hasFocusKey = getNodeFocusKey(node) !== null;
+    const isParent = isNodeIsParent(node);
 
-    if (hasFocusKey) {
+    if (isParent) {
       // already registered
       return null;
     }
+    const currentFocusKey = getNodeFocusKey(node);
 
-    const focusKeyAttribute = focusKey ?? `sn-pfk-${focusKeyCounter++}`;
+    const focusKeyAttribute = focusKey ?? currentFocusKey ?? `sn-pfk-${focusKeyCounter++}`;
     setNodeFocusKey(node, focusKeyAttribute);
     setNodeIsParent(node);
 
@@ -206,7 +208,7 @@ export class SpacialNavigation {
       return this.getFocusableNodeByFocusKey(currentFocusKey);
     }
 
-    const focusKeyAttribute = focusKey ?? `sn-fk-${focusKeyCounter++}`;
+    const focusKeyAttribute = focusKey ?? currentFocusKey ?? `sn-fk-${focusKeyCounter++}`;
     setNodeFocusKey(node, focusKeyAttribute);
     setNodeParentFocusKey(node, parentFocusKey);
 

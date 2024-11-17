@@ -1,17 +1,18 @@
-import { EventEmitter, Injectable, inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { Location } from '@angular/common';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, NavigationStart, Router } from '@angular/router';
 import { ActionSheetController, AlertController, ModalController } from '@ionic/angular/standalone';
 // import { BrowserService } from '@wako-app/mobile-sdk';
 import { filter } from 'rxjs';
-import { FocusableNode } from './lib/focusable-node';
 import { SpacialNavigation } from './lib/spacial-navigation';
 import {
   FOCUSABLE_ITEM_ATTRIBUTE_FOCUSABLE,
   FOCUSABLE_ITEM_ATTRIBUTE_IS_PARENT,
   FocusableStatus,
+  getNodeByFocusKey,
   getNodeFocusKey,
+  getNodeParentFocusKey,
 } from './lib/spacial-node';
 
 interface HTMLElementOverlay extends HTMLElement {
@@ -19,7 +20,16 @@ interface HTMLElementOverlay extends HTMLElement {
   dismiss: () => Promise<any>;
 }
 
-let parentFkCount = 0;
+interface OverlayHistoryEntry {
+  focusKey: string;
+  overlay: HTMLElementOverlay;
+}
+
+interface NavigationHistoryEntry {
+  focusKey: string;
+  route: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -30,25 +40,17 @@ export class SpacialNavigationService {
   private router = inject(Router);
   private location = inject(Location);
 
-  timer: any;
-
-  spacialNavigation!: SpacialNavigation;
-
   private initialized = false;
 
   private overlayVisible: HTMLElementOverlay | null = null;
 
-  private focusKeyToRestoreStack: {
-    overlay: HTMLElementOverlay;
-    focusKeyToRestore: string;
-  }[] = [];
-
+  private overlayHistory: OverlayHistoryEntry[] = [];
+  private navigationHistory: NavigationHistoryEntry[] = [];
   private parentFocusKeyIndex = 0;
 
-  onFocused = new EventEmitter<{
-    newItem: FocusableNode;
-    oldItem?: FocusableNode;
-  }>();
+  private currentRoute?: string;
+
+  spacialNavigation!: SpacialNavigation;
 
   initialize({ debug = false, visualDebug = false }: { debug?: boolean; visualDebug?: boolean }) {
     if (this.initialized) {
@@ -59,22 +61,59 @@ export class SpacialNavigationService {
 
     this.spacialNavigation = new SpacialNavigation({ debug, visualDebug });
 
-    // this.spacialNavigation.onFocused = ({ newItem, oldItem }) => {
-    //   this.onFocused.emit({ newItem, oldItem });
-    // };
-
-    this.hackIonicModals();
+    this.handleIonicOverlays();
 
     this.overrideBrowserService();
 
     this.listenForBodyChange();
 
-    // this.spacialNavigation.update();
+    this.initializeRouterEvents();
+  }
 
-    // Refresh focusable items when navigation ends
-    this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe((event) => {
-      this.routeChange();
-    });
+  private initializeRouterEvents() {
+    this.router.events
+      .pipe(
+        filter(
+          (event): event is NavigationEnd | NavigationStart =>
+            event instanceof NavigationEnd || event instanceof NavigationStart,
+        ),
+      )
+      .subscribe((event) => {
+        if (event instanceof NavigationStart && this.currentRoute) {
+          // Save the focused element of the current route
+          const currentFocusKey = this.spacialNavigation.currentlyFocusKey;
+          if (currentFocusKey) {
+            this.navigationHistory.push({
+              focusKey: currentFocusKey,
+              route: this.currentRoute,
+            });
+            this.spacialNavigation.log(
+              'navigation',
+              `Saved focus key ${currentFocusKey} for route ${this.currentRoute}`,
+            );
+          }
+        } else if (event instanceof NavigationEnd) {
+          // Update current route
+          this.currentRoute = event.url;
+
+          // Check if we're returning to a previously visited route
+          const existingEntryIndex = this.navigationHistory.findIndex((entry) => entry.route === event.url);
+
+          if (existingEntryIndex !== -1) {
+            // This is a back navigation to a known route
+            const entry = this.navigationHistory[existingEntryIndex];
+            // Remove this entry and all following entries
+            this.navigationHistory.splice(existingEntryIndex);
+
+            setTimeout(() => {
+              this.spacialNavigation.focusByFocusKey(entry.focusKey);
+              this.spacialNavigation.log('navigation', `Restored focus to ${entry.focusKey} for route ${event.url}`);
+            }, 100);
+          }
+
+          this.routeChange();
+        }
+      });
 
     this.spacialNavigation.log('initialize', 'Service initialized');
   }
@@ -166,34 +205,21 @@ export class SpacialNavigationService {
     // };
   }
 
-  private hackIonicModals() {
-    // Hack
-    // const alertCtrlRawCreate = this.alertCtrl.create.bind(this.alertCtrl);
+  private async handleIonicOverlays() {
+    let overlayVisible: HTMLElementOverlay | null = null;
 
-    // this.alertCtrl.create = this.overrideIonicOverlay(alertCtrlRawCreate);
+    const overlay = await this.getTopOverlay();
 
-    // const actionSheetCtrlRawCreate = this.actionSheetCtrl.create.bind(this.actionSheetCtrl);
+    if (overlay && !overlay.classList.contains('sn-overlay-handled')) {
+      overlay.classList.add('sn-overlay-handled');
+      this.overlayVisible = overlay;
+      this.onOverlayDidPresent(overlay);
+    }
+    if (overlay) {
+      overlayVisible = overlay;
+    }
 
-    // this.actionSheetCtrl.create = this.overrideIonicOverlay(actionSheetCtrlRawCreate);
-
-    // const ctrls = [this.alertCtrl, this.actionSheetCtrl, this.modalCtrl];
-
-    setInterval(async () => {
-      let overlayVisible: HTMLElementOverlay | null = null;
-
-      const overlay = await this.getTopOverlay();
-
-      if (overlay && !overlay.classList.contains('sn-overlay-handled')) {
-        overlay.classList.add('sn-overlay-handled');
-        this.overlayVisible = overlay;
-        this.onOverlayDidPresent(overlay);
-      }
-      if (overlay) {
-        overlayVisible = overlay;
-      }
-
-      this.overlayVisible = overlayVisible;
-    }, 500);
+    this.overlayVisible = overlayVisible;
   }
 
   private async getTopOverlay() {
@@ -210,12 +236,8 @@ export class SpacialNavigationService {
     return null;
   }
 
-  private getParentFocusKey() {
+  private generateParentFocusKey() {
     return `sn-service-parent-${this.parentFocusKeyIndex++}`;
-  }
-
-  private isServiceParentFocusKey(focusKey: string) {
-    return focusKey.startsWith('sn-service-parent-');
   }
 
   private disableAllActiveNodesInHiddenPage() {
@@ -282,13 +304,16 @@ export class SpacialNavigationService {
 
     if (this.overlayVisible) {
       // Overlay constraint
-      if (!this.focusKeyToRestoreStack.find(({ overlay }) => overlay === this.overlayVisible)) {
-        this.focusKeyToRestoreStack.push({
-          overlay: this.overlayVisible,
-          focusKeyToRestore: this.spacialNavigation.currentlyFocusKey ?? '',
-        });
+      if (!this.overlayHistory.find((entry) => entry.overlay === this.overlayVisible)) {
+        const currentFocusKey = this.spacialNavigation.currentlyFocusKey;
+        if (currentFocusKey && this.overlayVisible) {
+          this.overlayHistory.push({
+            focusKey: currentFocusKey,
+            overlay: this.overlayVisible,
+          });
+          this.spacialNavigation.log('overlay', `Saved focus key ${currentFocusKey} for overlay`);
+        }
       }
-      console.log('focusKeyToRestoreStack', this.focusKeyToRestoreStack);
 
       const fk = getNodeFocusKey(rootElement);
       if (fk) {
@@ -296,32 +321,11 @@ export class SpacialNavigationService {
       } else {
         parentFocusKey = this.spacialNavigation.registerParentNode({
           node: rootElement,
-          focusKey: this.getParentFocusKey(),
+          focusKey: this.generateParentFocusKey(),
           saveLastFocusedChild: true,
           constraintToParent: true,
         });
       }
-
-      // UnRegistered nodes
-      // const unregisteredNodes = rootElement.querySelectorAll(
-      //   `[${FOCUSABLE_ITEM_ATTRIBUTE_FOCUS_KEY}]`
-      // );
-
-      // unregisteredNodes.forEach((node) => {
-      //   if (!(node instanceof HTMLElement)) {
-      //     return;
-      //   }
-      //   let fk = getNodeFocusKey(node);
-      //   let pk = getNodeParentFocusKey(node);
-
-      //   if (fk && pk && pk !== parentFocusKey) {
-      //     this.spacialNavigation.unregisterNode({
-      //       focusKey: fk,
-      //     });
-
-      //     nodesToRegister.push(node);
-      //   }
-      // });
     }
 
     for (const node of nodesToRegister) {
@@ -344,9 +348,9 @@ export class SpacialNavigationService {
         if (!parentFocusKey) {
           parentFocusKey = this.spacialNavigation.registerParentNode({
             node: parentNode,
-            focusKey: this.getParentFocusKey(),
+            focusKey: this.generateParentFocusKey(),
             saveLastFocusedChild: true,
-            focusFirstChild: true,
+            focusFirstChild: false,
           });
         }
       }
@@ -357,11 +361,28 @@ export class SpacialNavigationService {
       let firstFocusKey: string | null = null;
 
       for (const node of nodesToRegister) {
+        let actualParentFocusKey = getNodeParentFocusKey(node);
+
+        if (actualParentFocusKey) {
+          const parentNode = getNodeByFocusKey(actualParentFocusKey);
+          if (!parentNode) {
+            actualParentFocusKey = null;
+          } else {
+            // Register it if unregistered
+            this.spacialNavigation.registerParentNode({
+              node: parentNode,
+              focusKey: actualParentFocusKey,
+              saveLastFocusedChild: true,
+              focusFirstChild: false,
+            });
+          }
+        }
+
         const focusableNode = this.spacialNavigation.registerNode({
           node,
           origin: 'makeFocusableNodes',
-          parentFocusKey: parentFocusKey,
-          focusNode: focusFirstNode,
+          parentFocusKey: actualParentFocusKey ?? parentFocusKey,
+          focusNode: false,
         });
         focusFirstNode = false;
 
@@ -376,7 +397,7 @@ export class SpacialNavigationService {
     }
   }
 
-  private refreshFocusableNodes() {
+  private async refreshFocusableNodes() {
     if (!this.initialized) {
       return;
     }
@@ -384,37 +405,39 @@ export class SpacialNavigationService {
     this.disableAllActiveNodesInHiddenPage();
     this.enableAllDisabledNodesInVisiblePage();
 
+    await this.handleIonicOverlays();
+
     this.registerNewFocusableNodes({
       rootElement: this.overlayVisible ?? document.body,
     });
   }
 
   private onOverlayDidPresent(overlay: HTMLElementOverlay) {
-    const focusKeyToRestore = this.focusKeyToRestoreStack[this.focusKeyToRestoreStack.length - 1];
+    const currentFocusKey = this.spacialNavigation.currentlyFocusKey;
 
-    this.spacialNavigation.log(
-      'onOverlayDidPresent',
-      `overlay presented due to click on ${focusKeyToRestore?.focusKeyToRestore}`,
-      overlay,
-    );
+    if (currentFocusKey) {
+      this.overlayHistory.push({
+        focusKey: currentFocusKey,
+        overlay: overlay,
+      });
+      this.spacialNavigation.log('overlay', `Saved focus key ${currentFocusKey} for new overlay`);
+    }
 
     overlay.onDidDismiss().then(() => {
-      this.spacialNavigation.log('onOverlayDidPresent', 'overlay dismissed');
-
       this.overlayVisible = null;
+
+      const lastOverlay = this.overlayHistory.pop();
 
       this.refreshFocusableNodes();
 
-      // Restore focus
-      if (this.focusKeyToRestoreStack.length > 0) {
-        let focusKeyToRestore = this.focusKeyToRestoreStack.pop();
-        if (focusKeyToRestore) {
-          this.spacialNavigation.log('onOverlayDidPresent', 'restore focus', focusKeyToRestore.focusKeyToRestore);
-          this.spacialNavigation.focusByFocusKey(focusKeyToRestore.focusKeyToRestore);
-        }
+      if (lastOverlay?.focusKey) {
+        this.spacialNavigation.log('overlay', `Restoring focus to ${lastOverlay.focusKey}`);
+        setTimeout(() => {
+          this.spacialNavigation.focusByFocusKey(lastOverlay.focusKey);
+        }, 100);
       }
 
-      this.spacialNavigation.log('onOverlayDidPresent', `focusKeyToRestoreStack:`, this.focusKeyToRestoreStack);
+      this.spacialNavigation.log('overlay', `Remaining overlay history:`, this.overlayHistory);
     });
 
     this.registerNewFocusableNodes({
@@ -429,5 +452,21 @@ export class SpacialNavigationService {
       this.spacialNavigation.resetCurrentFocusedNodeNeighbors();
       this.refreshFocusableNodes();
     }, 100);
+  }
+
+  // Utility methods for managing history
+  clearHistory() {
+    this.overlayHistory = [];
+    this.navigationHistory = [];
+  }
+
+  getLastFocusedKeyFromOverlay(): string | null {
+    const lastEntry = this.overlayHistory[this.overlayHistory.length - 1];
+    return lastEntry?.focusKey || null;
+  }
+
+  getLastFocusedKeyFromNavigation(): string | null {
+    const lastEntry = this.navigationHistory[this.navigationHistory.length - 1];
+    return lastEntry?.focusKey || null;
   }
 }

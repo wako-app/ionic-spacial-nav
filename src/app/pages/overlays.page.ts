@@ -1,14 +1,14 @@
 import { Component, inject } from '@angular/core';
 
 import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButton,
   ActionSheetController,
-  ModalController,
   AlertController,
+  IonButton,
+  IonContent,
+  IonHeader,
+  IonTitle,
+  IonToolbar,
+  ModalController,
 } from '@ionic/angular/standalone';
 
 import ButtonsPage from './buttons.page';
@@ -23,13 +23,15 @@ import ButtonsPage from './buttons.page';
         <ion-title>Overlays</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content>
-      <ion-button (click)="presentActionSheet()">Action Sheet</ion-button>
+    <ion-content sn-focuskey="overlays">
+      <ion-button sn-focuskey="action-sheet" sn-parent-focuskey="overlays" (click)="presentActionSheet()"
+        >Action Sheet</ion-button
+      >
       <!-- modal -->
-      <ion-button (click)="presentModal()">Modal</ion-button>
+      <ion-button sn-focuskey="modal" sn-parent-focuskey="overlays" (click)="presentModal()">Modal</ion-button>
       <!-- alert -->
-      <ion-button (click)="presentAlert()">Alert</ion-button>
-      // selected
+      <ion-button sn-focuskey="alert" sn-parent-focuskey="overlays" (click)="presentAlert()">Alert</ion-button>
+      <!-- selected -->
     </ion-content>
   `,
 })
