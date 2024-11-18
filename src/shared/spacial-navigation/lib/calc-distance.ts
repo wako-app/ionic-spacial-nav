@@ -389,7 +389,7 @@ export function setNeighbors({
     }
 
     // If we are in the same parent or we have a min distance, we don't need to check other nodes in this direction
-    if (nodesAreInSameParent || minElementDist !== undefined || direction === 'top' || direction === 'bottom') {
+    if (minElementDist !== undefined || direction === 'top' || direction === 'bottom') {
       continue;
     }
 

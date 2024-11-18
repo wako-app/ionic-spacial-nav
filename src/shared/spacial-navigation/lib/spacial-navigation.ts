@@ -1,6 +1,7 @@
 import { setNeighbors } from './calc-distance';
 import { FocusableNode, NeighborPosition } from './focusable-node';
 import {
+  FOCUSABLE_ROOT_PARENT,
   FocusableOrientation,
   getNodeByFocusKey,
   getNodeFocusKey,
@@ -72,6 +73,11 @@ export class SpacialNavigation {
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
     this.enable();
+
+    this.registerParentNode({
+      node: document.body,
+      focusKey: FOCUSABLE_ROOT_PARENT,
+    });
   }
 
   toggleDebug() {
@@ -309,6 +315,9 @@ export class SpacialNavigation {
           if (this.currentlyFocusedNode?.getFocusKey() === focusKey) {
             this.currentlyFocusedNode = null;
           }
+        } else {
+          // remove from the array
+          this.focusableNodes = this.focusableNodes.filter((fi) => fi.getElement() !== node.getElement());
         }
       }
     }
@@ -486,6 +495,11 @@ export class SpacialNavigation {
 
     nextNodeToFocus = this.currentlyFocusedNode.getNeighborNode(direction);
 
+    if (nextNodeToFocus && !document.body.contains(nextNodeToFocus.getElement())) {
+      this.unregisterDeletedNodes();
+      nextNodeToFocus = null;
+    }
+
     if (nextNodeToFocus && nextNodeToFocus.getFocusKey() === this.currentlyFocusedNode.getFocusKey()) {
       this.log(
         'moveFocus',
@@ -647,6 +661,11 @@ export class SpacialNavigation {
       canMoveLeft = focusedNode.getNeighborNode('left') === null;
       canMoveRight = focusedNode.getNeighborNode('right') === null;
 
+      // const nodesOutsideParentElements = nodesOutsideParent.map((node) => node.getElement());
+      // if (focusedNode.getFocusKey() === 'sn-fk-7') {
+      //   debugger;
+      // }
+
       setNeighbors({
         fromNode: focusedNode,
         neighborNodes: nodesOutsideParent,
@@ -657,9 +676,6 @@ export class SpacialNavigation {
         nodesAreInSameParent: false,
       });
 
-      if (focusedNode.getFocusKey() === 'home-movie-1') {
-        //debugger;
-      }
       // For all neighbors outside the parent, check if there's a last focused node for that parent
       const positions: NeighborPosition[] = ['top', 'bottom', 'left', 'right'];
       for (const position of positions) {
